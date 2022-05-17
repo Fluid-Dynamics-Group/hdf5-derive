@@ -4,13 +4,13 @@
 pub struct MissingDataset {
     msg: String,
     #[source]
-    source: hdf5::Error
+    source: hdf5::Error,
 }
 
 impl MissingDataset {
     pub fn from_field_name(name: &str, source: hdf5::Error) -> Self {
         let msg = format!("failed to read dataset with name `{name}`");
-        Self {msg, source}
+        Self { msg, source }
     }
 }
 
@@ -23,13 +23,14 @@ impl MissingDataset {
 pub struct SerializeArray {
     msg: String,
     #[source]
-    source: hdf5::Error
+    source: hdf5::Error,
 }
 
 impl SerializeArray {
     pub fn from_field_name(name: &str, source: hdf5::Error) -> Self {
-        let msg = format!("dataset {name} exists, but it could not be read to the array type provided");
-        Self {msg, source}
+        let msg =
+            format!("dataset {name} exists, but it could not be read to the array type provided");
+        Self { msg, source }
     }
 }
 
@@ -39,13 +40,13 @@ impl SerializeArray {
 pub struct CreateDataset {
     msg: String,
     #[source]
-    source: hdf5::Error
+    source: hdf5::Error,
 }
 
 impl CreateDataset {
     pub fn from_field_name(name: &str, source: hdf5::Error) -> Self {
         let msg = format!("Failed to create a dataset for {name}");
-        Self {msg, source}
+        Self { msg, source }
     }
 }
 
@@ -55,12 +56,12 @@ impl CreateDataset {
 pub struct WriteArray {
     msg: String,
     #[source]
-    source: hdf5::Error
+    source: hdf5::Error,
 }
 
 impl WriteArray {
     pub fn from_field_name(name: &str, source: hdf5::Error) -> Self {
         let msg = format!("Failed to write array `{name}` to dataset");
-        Self {msg, source}
+        Self { msg, source }
     }
 }

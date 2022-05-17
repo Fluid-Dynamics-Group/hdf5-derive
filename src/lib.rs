@@ -30,18 +30,17 @@ pub enum Error {
     CreateDataset(#[from] error::CreateDataset),
 }
 
-
 #[cfg(test)]
-mod read_tests{
+mod read_tests {
     use crate as hdf5_derive;
-    use std::fs;
     use macros::HDF5;
+    use std::fs;
 
     type Arr3 = ndarray::Array3<f64>;
 
     #[derive(HDF5)]
     struct TestStruct {
-        one: Arr3
+        one: Arr3,
     }
 
     #[test]
@@ -53,12 +52,56 @@ mod read_tests{
         let shape = (5, 20, 20);
 
         // write data out
-        let arr = ndarray::Array::linspace(0., 100., shape.0 * shape.1 * shape.2).into_shape(shape).unwrap();
-        let dset = file.new_dataset::<f64>().shape(shape).create("one").unwrap();
+        let arr = ndarray::Array::linspace(0., 100., shape.0 * shape.1 * shape.2)
+            .into_shape(shape)
+            .unwrap();
+        let dset = file
+            .new_dataset::<f64>()
+            .shape(shape)
+            .create("one")
+            .unwrap();
         dset.write(&arr).unwrap();
 
         // then parse the data
         let read_data = TestStruct::read_hdf5(&file).unwrap();
+
+        // check the arrays are the same
+        assert_eq!(read_data.one, arr);
+
+        fs::remove_file(path).ok();
+    }
+
+    #[derive(HDF5)]
+    struct RenameArray {
+        #[hdf5(rename(read = "two", write="one"))]
+        one: Arr3,
+    }
+
+    #[test]
+    fn simple_rename() {
+        let path = "simple_rename.h5";
+        fs::remove_file(path).ok();
+        let file = super::File::create(path).unwrap();
+
+        let shape = (5, 4, 4);
+
+        // write data out
+        let arr = ndarray::Array::linspace(
+            0.,
+            (shape.0 * shape.1 * shape.2) as f64,
+            shape.0 * shape.1 * shape.2,
+        )
+        .into_shape(shape)
+        .unwrap();
+        let dset = file
+            .new_dataset::<f64>()
+            .shape(shape)
+            .create("two")
+            .unwrap();
+        dset.write(&arr).unwrap();
+
+        // then parse the data
+        let read_data = RenameArray::read_hdf5(&file).unwrap();
 
         // check the arrays are the same
         assert_eq!(read_data.one, arr);
@@ -70,14 +113,14 @@ mod read_tests{
 #[cfg(test)]
 mod write_tests {
     use crate as hdf5_derive;
-    use std::fs;
     use macros::HDF5;
+    use std::fs;
 
     type Arr3 = ndarray::Array3<f64>;
 
     #[derive(HDF5)]
     struct TestWrite {
-        one: Arr3
+        one: Arr3,
     }
 
     #[test]
@@ -87,13 +130,15 @@ mod write_tests {
         let file = super::File::create(path).unwrap();
 
         let shape = (5, 20, 20);
-        let arr = ndarray::Array::linspace(0., 100., shape.0 * shape.1 * shape.2).into_shape(shape).unwrap();
+        let arr = ndarray::Array::linspace(0., 100., shape.0 * shape.1 * shape.2)
+            .into_shape(shape)
+            .unwrap();
 
-        let x = TestWrite { one: arr.clone()};
+        let x = TestWrite { one: arr.clone() };
 
         x.write_hdf5(&file).unwrap();
 
-        let new_arr : Arr3 = file.dataset("one").unwrap().read().unwrap();
+        let new_arr: Arr3 = file.dataset("one").unwrap().read().unwrap();
 
         // check the arrays are the same
         assert_eq!(x.one, new_arr);
@@ -103,25 +148,26 @@ mod write_tests {
 
     #[derive(HDF5)]
     struct TransposeWrite {
-        #[hdf5(transpose="write")]
-        one: Arr3
+        #[hdf5(transpose = "write")]
+        one: Arr3,
     }
 
-
     #[test]
-    fn write_transposed () {
+    fn write_transposed() {
         let path = "write_transposed_1.h5";
         fs::remove_file(path).ok();
         let file = super::File::create(path).unwrap();
 
         let shape = (5, 20, 20);
-        let arr = ndarray::Array::linspace(0., 100., shape.0 * shape.1 * shape.2).into_shape(shape).unwrap();
+        let arr = ndarray::Array::linspace(0., 100., shape.0 * shape.1 * shape.2)
+            .into_shape(shape)
+            .unwrap();
 
-        let x = TransposeWrite { one: arr.clone()};
+        let x = TransposeWrite { one: arr.clone() };
 
         x.write_hdf5(&file).unwrap();
 
-        let new_arr : Arr3 = file.dataset("one").unwrap().read().unwrap();
+        let new_arr: Arr3 = file.dataset("one").unwrap().read().unwrap();
 
         // check the arrays were transposed
         assert_eq!(x.one.t(), new_arr);
@@ -130,9 +176,9 @@ mod write_tests {
     }
 
     #[derive(HDF5)]
-    #[hdf5(transpose="write")]
+    #[hdf5(transpose = "write")]
     struct TransposeWriteInherit {
-        one: Arr3
+        one: Arr3,
     }
 
     #[test]
@@ -142,13 +188,15 @@ mod write_tests {
         let file = super::File::create(path).unwrap();
 
         let shape = (5, 20, 20);
-        let arr = ndarray::Array::linspace(0., 100., shape.0 * shape.1 * shape.2).into_shape(shape).unwrap();
+        let arr = ndarray::Array::linspace(0., 100., shape.0 * shape.1 * shape.2)
+            .into_shape(shape)
+            .unwrap();
 
-        let x = TransposeWriteInherit { one: arr.clone()};
+        let x = TransposeWriteInherit { one: arr.clone() };
 
         x.write_hdf5(&file).unwrap();
 
-        let new_arr : Arr3 = file.dataset("one").unwrap().read().unwrap();
+        let new_arr: Arr3 = file.dataset("one").unwrap().read().unwrap();
 
         // check the arrays were transposed
         assert_eq!(x.one.t(), new_arr);
@@ -157,10 +205,10 @@ mod write_tests {
     }
 
     #[derive(HDF5)]
-    #[hdf5(transpose="write")]
+    #[hdf5(transpose = "write")]
     struct TransposeWriteOverride {
-        #[hdf5(transpose="none")]
-        one: Arr3
+        #[hdf5(transpose = "none")]
+        one: Arr3,
     }
 
     #[test]
@@ -170,22 +218,64 @@ mod write_tests {
         let file = super::File::create(path).unwrap();
 
         let shape = (5, 20, 20);
-        let arr = ndarray::Array::linspace(0., 100., shape.0 * shape.1 * shape.2).into_shape(shape).unwrap();
+        let arr = ndarray::Array::linspace(0., 100., shape.0 * shape.1 * shape.2)
+            .into_shape(shape)
+            .unwrap();
 
-        let x = TransposeWriteOverride { one: arr.clone()};
+        let x = TransposeWriteOverride { one: arr.clone() };
 
         x.write_hdf5(&file).unwrap();
 
-        let new_arr : Arr3 = file.dataset("one").unwrap().read().unwrap();
+        let new_arr: Arr3 = file.dataset("one").unwrap().read().unwrap();
 
         // check the arrays are the same
         assert_eq!(x.one, new_arr);
 
         fs::remove_file(path).ok();
     }
+
+    #[derive(HDF5)]
+    struct ManuallyTransposedArray{
+        #[hdf5(transpose = "write")]
+        one: Arr3,
+    }
+
+    #[test]
+    /// ensure non-standard layout arrays (non-contiguous) can be written without errors
+    fn manually_transposed_array() {
+        let path = "manually_transposed_array.h5";
+        fs::remove_file(path).ok();
+        let file = super::File::create(path).unwrap();
+
+        let shape = (5, 4, 4);
+
+        // write data out
+        let arr = ndarray::Array::linspace(
+            0.,
+            (shape.0 * shape.1 * shape.2) as f64 - 1.,
+            shape.0 * shape.1 * shape.2,
+        )
+        .into_shape(shape)
+        .unwrap();
+
+        // transpose the data outside of the library
+        let arr = arr.t().to_owned();
+
+        // the array is not standard layout
+        assert!(arr.is_standard_layout() == false);
+
+        let x = ManuallyTransposedArray { one: arr.clone() };
+
+        x.write_hdf5(&file).unwrap();
+
+        let new_arr: Arr3 = file.dataset("one").unwrap().read().unwrap();
+
+        // check the arrays are the same
+        assert_eq!(arr.t(), new_arr);
+
+        fs::remove_file(path).ok();
+    }
 }
-
-
 
 /// Helper trait to determine the type of element that a given [`ArrayBase`](ndarray::ArrayBase)
 /// implements
@@ -200,11 +290,11 @@ pub trait ArrayType {
     type Ty;
 }
 
-impl <S,D> ArrayType for ndarray::ArrayBase<S, D> 
-    where S: ndarray::RawData
+impl<S, D> ArrayType for ndarray::ArrayBase<S, D>
+where
+    S: ndarray::RawData,
 {
     type Ty = <S as ndarray::RawData>::Elem;
 }
 
-mod testing {
-}
+mod testing {}

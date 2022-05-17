@@ -2,7 +2,6 @@ use proc_macro2::TokenStream;
 use syn::Result;
 use quote::quote;
 use proc_macro2::Span;
-use syn::punctuated::Punctuated;
 
 pub(crate) struct WriteInfo {
     pub(crate) field_name: syn::Ident,
@@ -17,7 +16,7 @@ pub(crate) fn write_codegen(ident: syn::Ident, generics: syn::Generics, span: Sp
     for array in arrays {
         let WriteInfo {field_name, field_type, array_name, transpose} = array;
 
-        let array_name_literal = syn::LitStr::new(&array_name, span);
+        let array_name_literal = syn::LitStr::new(array_name, span);
 
         // transpose the array if we need to 
         let (target_arr, target_arr_decl) = if *transpose {
@@ -42,6 +41,7 @@ pub(crate) fn write_codegen(ident: syn::Ident, generics: syn::Generics, span: Sp
             #body
 
             #target_arr_decl
+
             let #field_name = file.new_dataset::<<#field_type as hdf5_derive::ArrayType>::Ty>()
                 .shape(#target_arr.shape())
                 .create(#array_name_literal)
@@ -67,5 +67,5 @@ pub(crate) fn write_codegen(ident: syn::Ident, generics: syn::Generics, span: Sp
         }
     );
 
-    Ok(full_impl.into())
+    Ok(full_impl)
 }

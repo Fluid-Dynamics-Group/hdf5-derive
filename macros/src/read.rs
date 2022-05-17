@@ -18,7 +18,7 @@ pub(crate) fn read_codegen(ident: syn::Ident, generics: syn::Generics, span: Spa
     for array in arrays {
         let ReadInfo {field_name, field_type, array_name, transpose} = array;
 
-        let array_name_literal = syn::LitStr::new(&array_name, span);
+        let array_name_literal = syn::LitStr::new(array_name, span);
 
 
         // TODO: give some more error handling on this thing here
@@ -42,7 +42,7 @@ pub(crate) fn read_codegen(ident: syn::Ident, generics: syn::Generics, span: Spa
     }
 
     // build the final return statement
-    let punct : Punctuated<syn::Ident, syn::Token![,]> = arrays.into_iter().map(|arr| arr.field_name.clone()).collect();
+    let punct : Punctuated<syn::Ident, syn::Token![,]> = arrays.iter().map(|arr| arr.field_name.clone()).collect();
     let return_statement = quote!(Ok(#ident { #punct }));
 
     let (imp, ty, wher) = generics.split_for_impl();
@@ -58,5 +58,5 @@ pub(crate) fn read_codegen(ident: syn::Ident, generics: syn::Generics, span: Spa
         }
     );
 
-    Ok(full_impl.into())
+    Ok(full_impl)
 }

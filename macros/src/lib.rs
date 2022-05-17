@@ -29,23 +29,37 @@ enum TransposeOpts {
 
 impl TransposeOpts {
     fn transpose_read(&self) -> bool {
-        match self {
-            Self::Read | Self::Both => true,
-            _ => false
-        }
+        matches!(self, Self::Read | Self::Both)
     }
 
     fn transpose_write(&self) -> bool {
-        match self {
-            Self::Write | Self::Both => true,
-            _ => false
-        }
+        matches!(self, Self::Write | Self::Both)
     }
 }
 
 impl Default for TransposeOpts{
     fn default() -> Self {
         TransposeOpts::None
+    }
+}
+
+#[derive(Debug, Clone, darling::FromMeta, Default)]
+#[darling(default)]
+struct Rename {
+    read: Option<String>,
+    write: Option<String>,
+    both: Option<String>,
+}
+
+impl Rename {
+    /// name of the array if we are reading
+    fn read_name_or_ident(&self, ident: &syn::Ident) -> String {
+        self.both.as_ref().or(self.read.as_ref()).map(Into::into).unwrap_or_else(|| ident.to_string())
+    }
+
+    /// name of the array if we are writing
+    fn write_name_or_ident(&self, ident: &syn::Ident) -> String {
+        self.both.as_ref().or(self.write.as_ref()).map(Into::into).unwrap_or_else( || ident.to_string())
     }
 }
 
@@ -80,7 +94,12 @@ struct FieldReceiver {
     #[darling(default)]
     /// whether or not to use `std::ops::Deref` on the field before 
     /// serializing the container
-    transpose: Option<TransposeOpts>
+    transpose: Option<TransposeOpts>,
+
+    #[darling(default)]
+    /// whether or not to use `std::ops::Deref` on the field before 
+    /// serializing the container
+    rename: Rename
 }
 
 fn derive(input: DeriveInput) -> Result<TokenStream> {
@@ -113,7 +132,8 @@ fn derive(input: DeriveInput) -> Result<TokenStream> {
             let field_type = rx.ty.clone();
             let transpose = rx.transpose.unwrap_or(receiver.transpose).transpose_read();
 
-            let array_name = field_name.to_string();
+            let array_name = rx.rename.read_name_or_ident(&field_name);
+            //let array_name = field_name.to_string();
 
             read::ReadInfo {field_name, field_type, transpose, array_name}
 
@@ -126,7 +146,8 @@ fn derive(input: DeriveInput) -> Result<TokenStream> {
             let field_name = rx.ident.clone().unwrap();
             let field_type = rx.ty.clone();
             let transpose = rx.transpose.unwrap_or(receiver.transpose).transpose_write();
-            let array_name = field_name.to_string();
+            let array_name = rx.rename.write_name_or_ident(&field_name);
+            //let array_name = field_name.to_string();
 
             write::WriteInfo {field_name, field_type, transpose, array_name}
 
