@@ -83,8 +83,28 @@ fn derive(input: DeriveInput) -> Result<TokenStream> {
 
         }).collect();
 
+    // build the writing body:
+    let write_data: Vec<write::WriteInfo> = fields_information
+        .iter()
+        .map(|rx: &FieldReceiver| {
+            let field_name = rx.ident.clone().unwrap();
+            let field_type = rx.ty.clone();
+            let transpose = rx.transpose;
+            let array_name = field_name.to_string();
 
-    let read_impl = read::read_codegen(receiver.ident, receiver.generics, input.span(), &read_data)?;
+            write::WriteInfo {field_name, field_type, transpose, array_name}
 
-    Ok(read_impl)
+        }).collect();
+
+
+    let read_impl = read::read_codegen(receiver.ident.clone(), receiver.generics.clone(), input.span(), &read_data)?;
+    let write_impl = write::write_codegen(receiver.ident.clone(), receiver.generics.clone(), input.span(), &write_data)?;
+
+    let impls = quote::quote!(
+        #read_impl
+
+        #write_impl
+    );
+
+    Ok(impls.into())
 }
