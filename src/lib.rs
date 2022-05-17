@@ -77,7 +77,6 @@ mod write_tests {
 
     #[derive(HDF5)]
     struct TestWrite {
-        #[hdf5(transpose="write")]
         one: Arr3
     }
 
@@ -91,6 +90,89 @@ mod write_tests {
         let arr = ndarray::Array::linspace(0., 100., shape.0 * shape.1 * shape.2).into_shape(shape).unwrap();
 
         let x = TestWrite { one: arr.clone()};
+
+        x.write_hdf5(&file).unwrap();
+
+        let new_arr : Arr3 = file.dataset("one").unwrap().read().unwrap();
+
+        // check the arrays are the same
+        assert_eq!(x.one, new_arr);
+
+        fs::remove_file(path).ok();
+    }
+
+    #[derive(HDF5)]
+    struct TransposeWrite {
+        #[hdf5(transpose="write")]
+        one: Arr3
+    }
+
+
+    #[test]
+    fn write_transposed () {
+        let path = "write_transposed_1.h5";
+        fs::remove_file(path).ok();
+        let file = super::File::create(path).unwrap();
+
+        let shape = (5, 20, 20);
+        let arr = ndarray::Array::linspace(0., 100., shape.0 * shape.1 * shape.2).into_shape(shape).unwrap();
+
+        let x = TransposeWrite { one: arr.clone()};
+
+        x.write_hdf5(&file).unwrap();
+
+        let new_arr : Arr3 = file.dataset("one").unwrap().read().unwrap();
+
+        // check the arrays were transposed
+        assert_eq!(x.one.t(), new_arr);
+
+        fs::remove_file(path).ok();
+    }
+
+    #[derive(HDF5)]
+    #[hdf5(transpose="write")]
+    struct TransposeWriteInherit {
+        one: Arr3
+    }
+
+    #[test]
+    fn write_transposed_inherit() {
+        let path = "write_transposed_inherit.h5";
+        fs::remove_file(path).ok();
+        let file = super::File::create(path).unwrap();
+
+        let shape = (5, 20, 20);
+        let arr = ndarray::Array::linspace(0., 100., shape.0 * shape.1 * shape.2).into_shape(shape).unwrap();
+
+        let x = TransposeWriteInherit { one: arr.clone()};
+
+        x.write_hdf5(&file).unwrap();
+
+        let new_arr : Arr3 = file.dataset("one").unwrap().read().unwrap();
+
+        // check the arrays were transposed
+        assert_eq!(x.one.t(), new_arr);
+
+        fs::remove_file(path).ok();
+    }
+
+    #[derive(HDF5)]
+    #[hdf5(transpose="write")]
+    struct TransposeWriteOverride {
+        #[hdf5(transpose="none")]
+        one: Arr3
+    }
+
+    #[test]
+    fn write_transposed_override() {
+        let path = "write_transposed_override.h5";
+        fs::remove_file(path).ok();
+        let file = super::File::create(path).unwrap();
+
+        let shape = (5, 20, 20);
+        let arr = ndarray::Array::linspace(0., 100., shape.0 * shape.1 * shape.2).into_shape(shape).unwrap();
+
+        let x = TransposeWriteOverride { one: arr.clone()};
 
         x.write_hdf5(&file).unwrap();
 

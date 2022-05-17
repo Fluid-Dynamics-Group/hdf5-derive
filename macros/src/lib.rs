@@ -17,6 +17,38 @@ pub fn hdf5(input: TokenStream) -> TokenStream {
         .into()
 }
 
+
+#[derive(Debug, Clone, Copy, darling::FromMeta)]
+#[darling(default)]
+enum TransposeOpts {
+    Read,
+    Write,
+    Both,
+    None
+}
+
+impl TransposeOpts {
+    fn transpose_read(&self) -> bool {
+        match self {
+            Self::Read | Self::Both => true,
+            _ => false
+        }
+    }
+
+    fn transpose_write(&self) -> bool {
+        match self {
+            Self::Write | Self::Both => true,
+            _ => false
+        }
+    }
+}
+
+impl Default for TransposeOpts{
+    fn default() -> Self {
+        TransposeOpts::None
+    }
+}
+
 #[derive(Debug, FromDeriveInput)]
 #[darling(supports(struct_any), attributes(hdf5))]
 struct InputReceiver {
@@ -30,6 +62,9 @@ struct InputReceiver {
     /// Receives the body of the struct or enum. We don't care about
     /// struct fields because we previously told darling we only accept structs.
     data: ast::Data<(), FieldReceiver>,
+
+    #[darling(default)]
+    transpose: TransposeOpts
 }
 
 #[derive(Debug, FromField)]
@@ -45,7 +80,7 @@ struct FieldReceiver {
     #[darling(default)]
     /// whether or not to use `std::ops::Deref` on the field before 
     /// serializing the container
-    transpose: bool
+    transpose: Option<TransposeOpts>
 }
 
 fn derive(input: DeriveInput) -> Result<TokenStream> {
@@ -76,7 +111,8 @@ fn derive(input: DeriveInput) -> Result<TokenStream> {
         .map(|rx: &FieldReceiver| {
             let field_name = rx.ident.clone().unwrap();
             let field_type = rx.ty.clone();
-            let transpose = rx.transpose;
+            let transpose = rx.transpose.unwrap_or(receiver.transpose).transpose_read();
+
             let array_name = field_name.to_string();
 
             read::ReadInfo {field_name, field_type, transpose, array_name}
@@ -89,7 +125,7 @@ fn derive(input: DeriveInput) -> Result<TokenStream> {
         .map(|rx: &FieldReceiver| {
             let field_name = rx.ident.clone().unwrap();
             let field_type = rx.ty.clone();
-            let transpose = rx.transpose;
+            let transpose = rx.transpose.unwrap_or(receiver.transpose).transpose_write();
             let array_name = field_name.to_string();
 
             write::WriteInfo {field_name, field_type, transpose, array_name}
