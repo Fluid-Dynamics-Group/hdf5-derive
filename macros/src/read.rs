@@ -25,8 +25,10 @@ pub(crate) fn read_codegen(ident: syn::Ident, generics: syn::Generics, span: Spa
         body = quote!(
             #body
 
-            let #field_name = file.dataset(#array_name_literal)?;
-            let #field_name : #field_type = #field_name.read()?;
+            let #field_name = file.dataset(#array_name_literal)
+                .map_err(|e| hdf5_derive::MissingDataset::from_field_name(#array_name_literal, e))?;
+            let #field_name : #field_type = #field_name.read()
+                .map_err(|e| hdf5_derive::SerializeArray::from_field_name(#array_name_literal, e))?;
         );
 
         // transpose the array if we need to 
@@ -40,14 +42,14 @@ pub(crate) fn read_codegen(ident: syn::Ident, generics: syn::Generics, span: Spa
 
     // build the final return statement
     let punct : Punctuated<syn::Ident, syn::Token![,]> = arrays.into_iter().map(|arr| arr.field_name.clone()).collect();
-    let return_statement = quote!(#ident { #punct });
+    let return_statement = quote!(Ok(#ident { #punct }));
 
     let (imp, ty, wher) = generics.split_for_impl();
 
     // generate the full method implementation
     let full_impl = quote!(
         impl #imp #ident #ty #wher {
-            fn read_hdf5(file: hdf5_macros::File) -> Result<#ident, hdf5_macros::Error> {
+            fn read_hdf5(file: hdf5_derive::File) -> Result<#ident, hdf5_derive::Error> {
                 #body
 
                 #return_statement

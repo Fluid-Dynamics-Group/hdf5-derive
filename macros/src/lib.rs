@@ -6,8 +6,8 @@ use syn::{parse_macro_input, DeriveInput, Result};
 use syn::spanned::Spanned;
 use darling::{ast, FromDeriveInput, FromField};
 
-#[proc_macro_derive(MatFile, attributes(hdf5))]
-pub fn derive_dataarray(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(HDF5, attributes(hdf5))]
+pub fn hdf5(input: TokenStream) -> TokenStream {
     // Parse the input tokens into a syntax tree
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -16,8 +16,6 @@ pub fn derive_dataarray(input: TokenStream) -> TokenStream {
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }
-
-
 
 #[derive(Debug, FromDeriveInput)]
 #[darling(supports(struct_any), attributes(hdf5))]
@@ -86,7 +84,7 @@ fn derive(input: DeriveInput) -> Result<TokenStream> {
         }).collect();
 
 
-    let read_impl = read::read_codegen(receiver.ident, receiver.generics, input.span(), &read_data);
+    let read_impl = read::read_codegen(receiver.ident, receiver.generics, input.span(), &read_data)?;
 
-    todo!()
+    Ok(read_impl)
 }
