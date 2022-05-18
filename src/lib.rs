@@ -28,6 +28,9 @@ pub enum Error {
     #[error(transparent)]
     /// Could not create a dataset in a hdf5 file when writing
     CreateDataset(#[from] error::CreateDataset),
+    #[error(transparent)]
+    /// Could fetch an existing dataset when writing file
+    FetchDataset(#[from] error::FetchDataset),
 }
 
 #[cfg(test)]
@@ -73,7 +76,7 @@ mod read_tests {
 
     #[derive(HDF5)]
     struct RenameArray {
-        #[hdf5(rename(read = "two", write="one"))]
+        #[hdf5(rename(read = "two", write = "one"))]
         one: Arr3,
     }
 
@@ -88,7 +91,7 @@ mod read_tests {
         // write data out
         let arr = ndarray::Array::linspace(
             0.,
-            (shape.0 * shape.1 * shape.2) as f64,
+            (shape.0 * shape.1 * shape.2) as f64 - 1.,
             shape.0 * shape.1 * shape.2,
         )
         .into_shape(shape)
@@ -235,7 +238,7 @@ mod write_tests {
     }
 
     #[derive(HDF5)]
-    struct ManuallyTransposedArray{
+    struct ManuallyTransposedArray {
         #[hdf5(transpose = "write")]
         one: Arr3,
     }
@@ -272,6 +275,49 @@ mod write_tests {
 
         // check the arrays are the same
         assert_eq!(arr.t(), new_arr);
+
+        fs::remove_file(path).ok();
+    }
+
+    #[derive(HDF5)]
+    #[hdf5(mutate_on_write=true)]
+    struct MutateOnWrite {
+        one: Arr3,
+    }
+
+    #[test]
+    fn mutate_on_write() {
+        let path = "mutate_on_write.h5";
+        fs::remove_file(path).ok();
+        let file = super::File::create(path).unwrap();
+
+        let shape = (5, 4, 4);
+
+        // write data out
+        let arr = ndarray::Array::linspace(
+            0.,
+            (shape.0 * shape.1 * shape.2) as f64 - 1.,
+            shape.0 * shape.1 * shape.2,
+        )
+        .into_shape(shape)
+        .unwrap();
+
+         // create an existing dataset so we will error in .write_hdf5()
+         // if we try to create it without mutating
+         file
+            .new_dataset::<f64>()
+            .shape(shape)
+            .create("one")
+            .unwrap();
+
+        let x = MutateOnWrite { one: arr.clone() };
+
+        x.write_hdf5(&file).unwrap();
+
+        let new_arr: Arr3 = file.dataset("one").unwrap().read().unwrap();
+
+        // check the arrays are the same
+        assert_eq!(arr, new_arr);
 
         fs::remove_file(path).ok();
     }

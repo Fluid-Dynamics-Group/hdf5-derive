@@ -65,3 +65,19 @@ impl WriteArray {
         Self { msg, source }
     }
 }
+
+#[derive(thiserror::Error, Debug)]
+#[error("{}", .msg)]
+/// Could fetch an existing dataset when writing file
+pub struct FetchDataset {
+    msg: String,
+    #[source]
+    source: hdf5::Error,
+}
+
+impl FetchDataset {
+    pub fn from_field_name(name: &str, source: hdf5::Error) -> Self {
+        let msg = format!("Failed to fetch existing dataset `{name}` when writing to file");
+        Self { msg, source }
+    }
+}

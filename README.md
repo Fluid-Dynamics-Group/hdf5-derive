@@ -126,6 +126,46 @@ struct RenamedData {
 You can specify either `read`, `write`, `read` and `write`, or `both` if they `read == write`. If you 
 specify `both` and `read` (or `write`), the value defaults to the expression provided in `both`.
 
+## Mutating Existing Files
+
+If you only wish to change some values from an existing file, then you can use the `#[mutate_on_write]` attribute
+to mutate existing datasets. By default, `mutate_on_write` is set to `false` - meaning that datasets will be 
+created for every field. If this field already exists, then this will result in an error. 
+
+You can use container level attributes or field level attributes to specify the write behavior for a field. A container
+level attribute will change the default behavior of all fields, but a field level attribute will supersede any container
+level attributes (similar to `#[transpose]`). To mutate all fields in a struct:
+
+```
+use hdf5_derive::HDF5;
+use ndarray::Array2;
+
+#[derive(HDF5)]
+#[hdf5(mutate_on_write)]
+struct MutateData {
+	// a dataset named `array` is now expected to already exist
+	array: ndarray::Array3<usize>
+}
+```
+
+If you are mutating some fields of an `hdf5` file while creating new fields for others, you can mix and match 
+`mutate_on_write` for your desired behavior:
+
+```
+use hdf5_derive::HDF5;
+use ndarray::Array2;
+
+#[derive(HDF5)]
+#[hdf5(mutate_on_write)]
+struct MutateData {
+	// a dataset named `array` is now expected to already exist
+	array: ndarray::Array3<usize>,
+
+	// a dataset `create_me_dataset` will be created 
+	#[hdf5(mutate_on_write=false)]
+	create_me_dataset: ndarray::Array3<usize>
+}
+```
 
 ## Reading and writing large data files
 
