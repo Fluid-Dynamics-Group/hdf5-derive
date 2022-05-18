@@ -50,7 +50,7 @@ pub(crate) fn read_codegen(ident: syn::Ident, generics: syn::Generics, span: Spa
     // generate the full method implementation
     let full_impl = quote!(
         impl #imp #ident #ty #wher {
-            fn read_hdf5(file: &hdf5_derive::File) -> Result<#ident, hdf5_derive::Error> {
+            pub fn read_hdf5(file: &hdf5_derive::File) -> Result<#ident, hdf5_derive::Error> {
                 #body
 
                 #return_statement

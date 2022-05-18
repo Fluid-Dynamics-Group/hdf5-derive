@@ -74,7 +74,7 @@ pub(crate) fn write_codegen(ident: syn::Ident, generics: syn::Generics, span: Sp
     // generate the full method implementation
     let full_impl = quote!(
         impl #imp #ident #ty #wher {
-            fn write_hdf5(&self, file: &hdf5_derive::File) -> Result<(), hdf5_derive::Error> {
+            pub fn write_hdf5(&self, file: &hdf5_derive::File) -> Result<(), hdf5_derive::Error> {
                 use ndarray::ShapeBuilder;
                 #body
 
