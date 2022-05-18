@@ -58,7 +58,7 @@ examples of column major indexing are:
 * Matlab
 * julia
 
-Since `hdf5` has no sense of the order of the matricies stored, you must manually transpose the arrays read. You can do this through
+Since `hdf5` has no sense of the order of the matrices stored, you must manually transpose the arrays read. You can do this through
 the `transpose` attribute:
 
 ```
