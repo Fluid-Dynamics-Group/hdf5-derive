@@ -6,9 +6,18 @@
 pub use macros::HDF5;
 
 pub use hdf5::File;
+pub use hdf5::Group;
+
 mod error;
 
 pub use error::*;
+
+pub trait ContainerIo {
+    fn write_hdf5(&self, container: &File) -> Result<(), Error>;
+    fn read_hdf5(container: &Group) -> Result<Self, Error>
+    where
+        Self: Sized;
+}
 
 #[derive(thiserror::Error, Debug)]
 /// General error type that provides helpful information on what went wrong
@@ -36,6 +45,7 @@ pub enum Error {
 #[cfg(test)]
 mod read_tests {
     use crate as hdf5_derive;
+    use hdf5_derive::ContainerIo;
     use macros::HDF5;
     use std::fs;
 
@@ -343,4 +353,38 @@ where
     type Ty = <S as ndarray::RawData>::Elem;
 }
 
-mod testing {}
+//mod testing {
+//    use crate as hdf5_derive;
+//    use hdf5_derive::Container;
+//    use macros::HDF5;
+//    use std::fs;
+//    type Arr3 = ndarray::Array3<f64>;
+//    struct TestStruct {
+//        one: Arr3,
+//    }
+//    impl hdf5_derive::Container for TestStruct {
+//        fn write_hdf5(&self, container: &hdf5_derive::File) -> Result<(), hdf5_derive::Error> {
+//            use ndarray::ShapeBuilder;
+//            let one = file
+//                .new_dataset::<<Arr3 as hdf5_derive::ArrayType>::Ty>()
+//                .shape(self.one.shape())
+//                .create("one")
+//                .map_err(|e| hdf5_derive::CreateDataset::from_field_name("one", e))?;
+//            one.write(&self.one)
+//                .map_err(|e| hdf5_derive::WriteArray::from_field_name("one", e))?;
+//            Ok(())
+//        }
+//        fn read_hdf5(container: &hdf5_derive::File) -> Result<Self, hdf5_derive::Error>
+//        where
+//            Self: Sized,
+//        {
+//            let one = file
+//                .dataset("one")
+//                .map_err(|e| hdf5_derive::MissingDataset::from_field_name("one", e))?;
+//            let one: Arr3 = one
+//                .read()
+//                .map_err(|e| hdf5_derive::SerializeArray::from_field_name("one", e))?;
+//            Ok(TestStruct { one })
+//        }
+//    }
+//}

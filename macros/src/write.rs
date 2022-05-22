@@ -11,7 +11,7 @@ pub(crate) struct WriteInfo {
     pub(crate) mutate_on_write: bool,
 }
 
-pub(crate) fn write_codegen(ident: syn::Ident, generics: syn::Generics, span: Span, arrays: &[WriteInfo]) -> Result<TokenStream> {
+pub(crate) fn write_codegen(span: Span, arrays: &[WriteInfo]) -> Result<TokenStream> {
     let mut body = quote!();
 
     for array in arrays {
@@ -69,18 +69,12 @@ pub(crate) fn write_codegen(ident: syn::Ident, generics: syn::Generics, span: Sp
         );
     }
 
-    let (imp, ty, wher) = generics.split_for_impl();
-
     // generate the full method implementation
     let full_impl = quote!(
-        impl #imp #ident #ty #wher {
-            pub fn write_hdf5(&self, file: &hdf5_derive::File) -> Result<(), hdf5_derive::Error> {
-                use ndarray::ShapeBuilder;
-                #body
+        use ndarray::ShapeBuilder;
+        #body
 
-                Ok(())
-            }
-        }
+        Ok(())
     );
 
     Ok(full_impl)

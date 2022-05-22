@@ -8,7 +8,7 @@ You can use the `hdf5_derive::HDF5` derive macro to make you struct of `ndarray:
 `.read_hdf5(file)` and `.write_hdf5(&self, file)` are automatically generated for you:
 
 ```
-use hdf5_derive::HDF5;
+use hdf5_derive::{HDF5, ContainerIo};
 use ndarray::Array3;
 use ndarray::Array4;
 

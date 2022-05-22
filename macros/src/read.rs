@@ -12,7 +12,7 @@ pub(crate) struct ReadInfo {
     pub(crate) transpose: bool,
 }
 
-pub(crate) fn read_codegen(ident: syn::Ident, generics: syn::Generics, span: Span, arrays: &[ReadInfo]) -> Result<TokenStream> {
+pub(crate) fn read_codegen(ident: syn::Ident, span: Span, arrays: &[ReadInfo]) -> Result<TokenStream> {
     let mut body = quote!();
 
     for array in arrays {
@@ -26,7 +26,7 @@ pub(crate) fn read_codegen(ident: syn::Ident, generics: syn::Generics, span: Spa
         body = quote!(
             #body
 
-            let #field_name = file.dataset(#array_name_literal)
+            let #field_name = container.dataset(#array_name_literal)
                 .map_err(|e| hdf5_derive::MissingDataset::from_field_name(#array_name_literal, e))?;
             let #field_name : #field_type = #field_name.read()
                 .map_err(|e| hdf5_derive::SerializeArray::from_field_name(#array_name_literal, e))?;
@@ -45,17 +45,11 @@ pub(crate) fn read_codegen(ident: syn::Ident, generics: syn::Generics, span: Spa
     let punct : Punctuated<syn::Ident, syn::Token![,]> = arrays.iter().map(|arr| arr.field_name.clone()).collect();
     let return_statement = quote!(Ok(#ident { #punct }));
 
-    let (imp, ty, wher) = generics.split_for_impl();
-
     // generate the full method implementation
     let full_impl = quote!(
-        impl #imp #ident #ty #wher {
-            pub fn read_hdf5(file: &hdf5_derive::File) -> Result<#ident, hdf5_derive::Error> {
-                #body
+        #body
 
-                #return_statement
-            }
-        }
+        #return_statement
     );
 
     Ok(full_impl)

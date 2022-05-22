@@ -161,14 +161,26 @@ fn derive(input: DeriveInput) -> Result<TokenStream> {
         }).collect();
 
 
-    let read_impl = read::read_codegen(receiver.ident.clone(), receiver.generics.clone(), input.span(), &read_data)?;
-    let write_impl = write::write_codegen(receiver.ident.clone(), receiver.generics.clone(), input.span(), &write_data)?;
+    let read_impl = read::read_codegen(receiver.ident.clone(), input.span(), &read_data)?;
+    let write_impl = write::write_codegen(input.span(), &write_data)?;
 
-    let impls = quote::quote!(
-        #read_impl
+    Ok(combine_impls(receiver.ident, receiver.generics, read_impl, write_impl).into())
+}
 
-        #write_impl
-    );
 
-    Ok(impls.into())
+fn combine_impls(ident: syn::Ident, generics: syn::Generics, read_body: proc_macro2::TokenStream, write_body: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    let (imp, ty, wher) = generics.split_for_impl();
+
+    quote::quote!(
+        impl #imp hdf5_derive::ContainerIo for #ident #ty #wher {
+            fn write_hdf5(&self, container: &hdf5_derive::File) -> Result<(), hdf5_derive::Error> {
+                #write_body
+            }
+            fn read_hdf5(container: &hdf5_derive::Group) -> Result<Self, hdf5_derive::Error> 
+                where Self: Sized
+            {
+                #read_body
+            }
+        }
+    )
 }
