@@ -12,8 +12,73 @@ mod error;
 
 pub use error::*;
 
+/// Provides methods for reading and writing to an [`hdf5`] file. Derived with [`HDF5`] macro.
 pub trait ContainerIo {
+    /// write the contents of a struct to an HDF5 file
+    ///
+    ///
+    /// ```
+    /// use hdf5_derive::ContainerIo;
+    /// use hdf5_derive::HDF5;
+    /// use ndarray::Array2;
+    ///
+    /// #[derive(HDF5)]
+    /// struct Data {
+    ///     some_field: Array2<u32>
+    /// }
+    ///
+    /// let path = "./test_file_write.h5";
+    /// let file = hdf5_derive::File::create(path).unwrap();
+    ///
+    /// // write some data to the file
+    /// let arr = Array2::zeros((5,5));
+    /// let data = Data { some_field: arr.clone() };
+    /// data.write_hdf5(&file).unwrap();
+    ///
+    /// // manually read the data using `hdf5` primitives
+    /// let dset = file.dataset("some_field").unwrap();
+    /// let read_array : Array2<u32> = dset.read().unwrap();
+    ///
+    /// // check that they are the same
+    /// assert_eq!(read_array, arr);
+    ///
+    /// // remove this file for practical purposes
+    /// std::fs::remove_file(path).unwrap();
+    /// ```
     fn write_hdf5(&self, container: &File) -> Result<(), Error>;
+    /// read the contents of an HDF5 file to `Self`
+    ///
+    /// ```
+    /// use hdf5_derive::ContainerIo;
+    /// use hdf5_derive::HDF5;
+    /// use ndarray::Array2;
+    ///
+    /// #[derive(HDF5)]
+    /// struct Data {
+    ///     #[hdf5(rename(read = "some_field_renamed"))]
+    ///     some_field: Array2<u32>
+    /// }
+    ///
+    /// let path = "./test_file_write.h5";
+    /// let file = hdf5_derive::File::create(path).unwrap();
+    ///
+    /// // write some data to the file
+    /// let arr = Array2::zeros((5,5));
+    /// let dset = file.new_dataset::<u32>()
+    ///     .shape((5,5))
+    ///     .create("some_field_renamed")
+    ///     .unwrap();
+    /// dset.write(&arr).unwrap();
+    ///
+    /// // now, read the data from the written dataset
+    /// let read_data = Data::read_hdf5(&file).unwrap();
+    ///
+    /// // check that they are the same
+    /// assert_eq!(read_data.some_field, arr);
+    ///
+    /// // remove this file for practical purposes
+    /// std::fs::remove_file(path).unwrap();
+    /// ```
     fn read_hdf5(container: &Group) -> Result<Self, Error>
     where
         Self: Sized;
@@ -343,6 +408,7 @@ mod write_tests {
 ///
 /// Since the `ArrayBase` does not directly implement [`RawData`](ndarray::RawData), it is not
 /// possible to determine the type of the array elements without a helper trait.
+#[doc(hidden)]
 pub trait ArrayType {
     type Ty;
 }
@@ -353,39 +419,3 @@ where
 {
     type Ty = <S as ndarray::RawData>::Elem;
 }
-
-//mod testing {
-//    use crate as hdf5_derive;
-//    use hdf5_derive::Container;
-//    use macros::HDF5;
-//    use std::fs;
-//    type Arr3 = ndarray::Array3<f64>;
-//    struct TestStruct {
-//        one: Arr3,
-//    }
-//    impl hdf5_derive::Container for TestStruct {
-//        fn write_hdf5(&self, container: &hdf5_derive::File) -> Result<(), hdf5_derive::Error> {
-//            use ndarray::ShapeBuilder;
-//            let one = file
-//                .new_dataset::<<Arr3 as hdf5_derive::ArrayType>::Ty>()
-//                .shape(self.one.shape())
-//                .create("one")
-//                .map_err(|e| hdf5_derive::CreateDataset::from_field_name("one", e))?;
-//            one.write(&self.one)
-//                .map_err(|e| hdf5_derive::WriteArray::from_field_name("one", e))?;
-//            Ok(())
-//        }
-//        fn read_hdf5(container: &hdf5_derive::File) -> Result<Self, hdf5_derive::Error>
-//        where
-//            Self: Sized,
-//        {
-//            let one = file
-//                .dataset("one")
-//                .map_err(|e| hdf5_derive::MissingDataset::from_field_name("one", e))?;
-//            let one: Arr3 = one
-//                .read()
-//                .map_err(|e| hdf5_derive::SerializeArray::from_field_name("one", e))?;
-//            Ok(TestStruct { one })
-//        }
-//    }
-//}

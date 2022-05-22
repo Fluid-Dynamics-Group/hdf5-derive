@@ -4,8 +4,8 @@ read and write arrays from an hdf5 file to a struct
 
 ## Usage
 
-You can use the `hdf5_derive::HDF5` derive macro to make you struct of `ndarray::Array` data writeable. The methods
-`.read_hdf5(file)` and `.write_hdf5(&self, file)` are automatically generated for you:
+You can use the `hdf5_derive::HDF5` derive macro to make you struct of [`ndarray::Array<T>`](`ndarray::Array`) data writeable. The macro
+derives the [`ContainerIo`] trait, which provides a `.write_hdf5` and `read_hdf5` method.
 
 ```
 use hdf5_derive::{HDF5, ContainerIo};
