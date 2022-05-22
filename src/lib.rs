@@ -126,6 +126,7 @@ mod read_tests {
 #[cfg(test)]
 mod write_tests {
     use crate as hdf5_derive;
+    use hdf5_derive::ContainerIo;
     use macros::HDF5;
     use std::fs;
 

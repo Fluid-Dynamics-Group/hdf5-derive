@@ -173,10 +173,10 @@ fn combine_impls(ident: syn::Ident, generics: syn::Generics, read_body: proc_mac
 
     quote::quote!(
         impl #imp hdf5_derive::ContainerIo for #ident #ty #wher {
-            fn write_hdf5(&self, container: &hdf5_derive::File) -> Result<(), hdf5_derive::Error> {
+            fn write_hdf5(&self, file: &hdf5_derive::File) -> Result<(), hdf5_derive::Error> {
                 #write_body
             }
-            fn read_hdf5(container: &hdf5_derive::Group) -> Result<Self, hdf5_derive::Error> 
+            fn read_hdf5(group: &hdf5_derive::Group) -> Result<Self, hdf5_derive::Error> 
                 where Self: Sized
             {
                 #read_body

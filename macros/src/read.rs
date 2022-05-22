@@ -26,7 +26,7 @@ pub(crate) fn read_codegen(ident: syn::Ident, span: Span, arrays: &[ReadInfo]) -
         body = quote!(
             #body
 
-            let #field_name = container.dataset(#array_name_literal)
+            let #field_name = group.dataset(#array_name_literal)
                 .map_err(|e| hdf5_derive::MissingDataset::from_field_name(#array_name_literal, e))?;
             let #field_name : #field_type = #field_name.read()
                 .map_err(|e| hdf5_derive::SerializeArray::from_field_name(#array_name_literal, e))?;
