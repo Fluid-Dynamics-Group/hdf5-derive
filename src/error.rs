@@ -52,6 +52,22 @@ impl CreateDataset {
 
 #[derive(thiserror::Error, Debug)]
 #[error("{}", .msg)]
+/// Could not create a attribute in a hdf5 file when writing
+pub struct CreateAttribute {
+    msg: String,
+    #[source]
+    source: hdf5::Error,
+}
+
+impl CreateAttribute {
+    pub fn from_field_name(name: &str, source: hdf5::Error) -> Self {
+        let msg = format!("Failed to create a attribute for {name}");
+        Self { msg, source }
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+#[error("{}", .msg)]
 /// Failed to serialize an array to a hdf5 dataset
 pub struct WriteArray {
     msg: String,
@@ -68,6 +84,22 @@ impl WriteArray {
 
 #[derive(thiserror::Error, Debug)]
 #[error("{}", .msg)]
+/// Failed to serialize an array to a hdf5 dataset
+pub struct WriteAttribute {
+    msg: String,
+    #[source]
+    source: hdf5::Error,
+}
+
+impl WriteAttribute {
+    pub fn from_field_name(name: &str, source: hdf5::Error) -> Self {
+        let msg = format!("Failed to write attribute `{name}` to dataset");
+        Self { msg, source }
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+#[error("{}", .msg)]
 /// Could fetch an existing dataset when writing file
 pub struct FetchDataset {
     msg: String,
@@ -78,6 +110,54 @@ pub struct FetchDataset {
 impl FetchDataset {
     pub fn from_field_name(name: &str, source: hdf5::Error) -> Self {
         let msg = format!("Failed to fetch existing dataset `{name}` when writing to file");
+        Self { msg, source }
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+#[error("{}", .msg)]
+/// Could fetch an existing dataset when writing file
+pub struct FetchAttribute {
+    msg: String,
+    #[source]
+    source: hdf5::Error,
+}
+
+impl FetchAttribute {
+    pub fn from_field_name(name: &str, source: hdf5::Error) -> Self {
+        let msg = format!("Failed to fetch existing attribute `{name}` when writing to file");
+        Self { msg, source }
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+#[error("{}", .msg)]
+/// Could fetch an existing dataset when writing file
+pub struct MissingAttribute {
+    msg: String,
+    #[source]
+    source: hdf5::Error,
+}
+
+impl MissingAttribute {
+    pub fn from_field_name(name: &str, source: hdf5::Error) -> Self {
+        let msg = format!("Failed to fetch attribute `{name}` when reading from file");
+        Self { msg, source }
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+#[error("{}", .msg)]
+/// Failed to serialize the dataset to the correct type after it has been written
+pub struct SerializeAttribute {
+    msg: String,
+    #[source]
+    source: hdf5::Error,
+}
+
+impl SerializeAttribute {
+    pub fn from_field_name(name: &str, source: hdf5::Error) -> Self {
+        let msg = format!("Failed to read attribute `{name}` to the correct rust type");
         Self { msg, source }
     }
 }

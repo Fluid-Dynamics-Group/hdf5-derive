@@ -1,4 +1,4 @@
-#![doc = include_str!("../README.md")]
+//#![doc = include_str!("../README.md")]
 
 /// Derive read and write capabilities for a struct of arrays
 ///
@@ -59,7 +59,7 @@ pub trait ContainerIo {
     ///     some_field: Array2<u32>
     /// }
     ///
-    /// let path = "./test_file_write.h5";
+    /// let path = "./test_file_read.h5";
     /// let file = hdf5_derive::File::create(path).unwrap();
     ///
     /// // write some data to the file
@@ -105,6 +105,21 @@ pub enum Error {
     #[error(transparent)]
     /// Could fetch an existing dataset when writing file
     FetchDataset(#[from] error::FetchDataset),
+    #[error(transparent)]
+    /// Attribute was missing from hdf5 file
+    MissingAttribute(#[from] error::MissingAttribute),
+    #[error(transparent)]
+    /// Attribute was missing from hdf5 file
+    SerializeAttribute(#[from] error::SerializeAttribute),
+    #[error(transparent)]
+    /// Attribute was missing from hdf5 file
+    FetchAttribute(#[from] error::FetchAttribute),
+    #[error(transparent)]
+    /// Could not create a attribute in a hdf5 file when writing
+    CreateAttribute(#[from] error::CreateAttribute),
+    #[error(transparent)]
+    /// Could not create a attribute in a hdf5 file when writing
+    WriteAttribute(#[from] error::WriteAttribute),
 }
 
 #[cfg(test)]
@@ -396,6 +411,102 @@ mod write_tests {
         assert_eq!(arr, new_arr);
 
         fs::remove_file(path).ok();
+    }
+}
+
+#[cfg(test)]
+mod attribute_tests {
+    use crate as hdf5_derive;
+    use hdf5_derive::ContainerIo;
+    use hdf5_derive::HDF5;
+
+    #[derive(HDF5)]
+    struct SimpleAttributeRead {
+        #[hdf5(attribute)]
+        some_value: u64
+    }
+
+    #[test]
+    fn simple_attribute_read() {
+        let path = "./simple_attribute_read.h5";
+        let file = hdf5_derive::File::create(&path).unwrap();
+
+        let value = 999241;
+
+        let attr = file.new_attr::<u64>()
+            .create("some_value")
+            .unwrap();
+
+        attr.write_scalar(&value).unwrap();
+
+        let x = SimpleAttributeRead::read_hdf5(&file).unwrap();
+
+        assert_eq!(value, x.some_value);
+
+        std::fs::remove_file(&path).unwrap();
+    }
+
+    #[derive(HDF5)]
+    struct SimpleAttributeWrite {
+        #[hdf5(attribute)]
+        another_value: u64
+    }
+
+    #[test]
+    fn simple_attribute_write() {
+        let path = "./simple_attribute_write.h5";
+        let file = hdf5_derive::File::create(&path).unwrap();
+
+        let value = 21298347;
+
+        let x = SimpleAttributeWrite { another_value: value };
+        x.write_hdf5(&file).unwrap();
+
+        let read_value = file.attr("another_value")
+            .unwrap()
+            .read_scalar()
+            .unwrap();
+
+        assert_eq!(value, read_value);
+
+        std::fs::remove_file(&path).unwrap();
+    }
+
+    #[derive(HDF5)]
+    #[hdf5(mutate_on_write)]
+    struct MutatedAttributeWrite {
+        #[hdf5(attribute)]
+        #[hdf5(rename(both="renamed_value"))]
+        mutated_value: u64
+    }
+
+    #[test]
+    fn mutated_attribute_write() {
+        let path = "./mutated_attribute_write.h5";
+        let file = hdf5_derive::File::create(&path).unwrap();
+
+        let value = 23894;
+
+        let attr = file.new_attr::<u64>()
+            .create("renamed_value")
+            .unwrap();
+
+        attr.write_scalar(&value).unwrap();
+
+        let new_value = 90842982;
+        let mut read_struct = MutatedAttributeWrite::read_hdf5(&file).unwrap();
+
+        assert_eq!(read_struct.mutated_value, value);
+
+        // assign the new value to the struct 
+        read_struct.mutated_value = new_value;
+        read_struct.write_hdf5(&file).unwrap();
+
+        // then re-read the file and make sure the new value
+        let reread_struct = MutatedAttributeWrite::read_hdf5(&file).unwrap();
+        assert_eq!(reread_struct.mutated_value, new_value);
+        
+        std::fs::remove_file(&path).unwrap();
     }
 }
 
