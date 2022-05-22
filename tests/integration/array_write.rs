@@ -4,6 +4,7 @@ use macros::HDF5;
 use std::fs;
 
 type Arr3 = ndarray::Array3<f64>;
+use ndarray::Array2;
 
 #[derive(HDF5)]
 struct TestWrite {
@@ -202,6 +203,38 @@ fn mutate_on_write() {
 
     // check the arrays are the same
     assert_eq!(arr, new_arr);
+
+    fs::remove_file(path).ok();
+}
+
+#[derive(HDF5)]
+#[hdf5(mutate_on_write=true)]
+struct MutateOnWriteDifferentShapes {
+    one: Array2<usize>,
+}
+
+#[derive(HDF5)]
+struct DifferentShapes {
+    one: Array2<usize>,
+}
+
+#[test]
+fn mutate_on_write_different_shapes() {
+    let path = "mutate_on_write_different_shapes.h5";
+    let file = hdf5::File::create(&path).unwrap();
+
+    let arr = Array2::zeros((5,4));
+    let arr_another = Array2::zeros((3,2));
+    
+    let h5_writer = DifferentShapes {one : arr.clone() };
+    h5_writer.write_hdf5(&file).unwrap();
+
+    // then read the data into a struct that mutates it when it writes
+    let mut mutate_writer = MutateOnWriteDifferentShapes::read_hdf5(&file).unwrap();
+    mutate_writer.one = arr_another.clone();
+    let out = mutate_writer.write_hdf5(&file);
+
+    assert!(out.is_err());
 
     fs::remove_file(path).ok();
 }

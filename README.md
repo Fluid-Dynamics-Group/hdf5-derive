@@ -173,6 +173,15 @@ struct MutateData {
 }
 ```
 
+### Mutating with different shaped data
+
+If you are reading in some data, mutating the shape in any way (including `#[transpose="write"]` / `#[transpose="read"]`),
+and then writing it to the same file `hdf5` will throw an error. Because `hdf5` has no mechanism 
+to delete data from a group, you will have to create a new [`File`] object and write all of the data there. 
+
+If the data you are operating on never changes shape (or you use `#[transpose="both"]`), this will not be an issue. Alternatively,
+you can also avoid the issue if you dont use `#[mutate_on_write]` and instead write to a new file.
+
 ## Attributes
 
 You can also store scalar attributes along with array data with the `#[hdf5(attribute)]` attribute.
