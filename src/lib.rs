@@ -8,7 +8,7 @@ pub use macros::HDF5;
 pub use hdf5::File;
 pub use hdf5::Group;
 
-mod error;
+pub mod error;
 
 #[doc(hidden)]
 pub use error::*;
