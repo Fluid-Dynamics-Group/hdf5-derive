@@ -2,7 +2,7 @@ macro_rules! create_error_type {
     ($error_name:ident, $format_str:expr, $doc_str:expr) => {
         #[doc=$doc_str]
         #[derive(thiserror::Error, Debug)]
-        #[error("{}", .msg)]
+        #[error("{}\n\nsource:\n{}", .msg, .source)]
         pub struct $error_name {
             msg: String,
             #[source]

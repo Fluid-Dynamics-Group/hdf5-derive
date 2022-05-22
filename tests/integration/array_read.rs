@@ -75,3 +75,23 @@ fn simple_rename() {
 
     fs::remove_file(path).ok();
 }
+
+#[derive(HDF5)]
+struct ShouldError {
+    one: Arr3,
+}
+
+#[test]
+fn should_error() {
+    let path = "should_error.h5";
+    let file = File::create(path).unwrap();
+
+    let res = ShouldError::read_hdf5(&file);
+    if let Err(e) = res {
+        println!("{}", e);
+    }
+
+    std::fs::remove_file(&path).unwrap();
+
+    //panic!()
+}
