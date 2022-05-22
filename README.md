@@ -19,6 +19,10 @@ struct Data {
 	pressure: Array3<f64>,
 	velocity: Array4<f64>,
 	temperature: Array3<f64>,
+	#[hdf5(attribute)]
+	reynolds_number: f64,
+	#[hdf5(attribute)]
+	timesteps: u64,
 }
 
 // fill the struct with some data
@@ -26,6 +30,8 @@ let data = Data {
 	pressure: Array3::zeros((N, N, N)),
 	temperature: Array3::zeros((N, N, N)),
 	velocity: Array4::zeros((N, N, N, 3)),
+	timesteps: 10_000,
+	reynolds_number: 1650.
 };
 
 // write data to a file
@@ -164,6 +170,26 @@ struct MutateData {
 	// a dataset `create_me_dataset` will be created 
 	#[hdf5(mutate_on_write=false)]
 	create_me_dataset: ndarray::Array3<usize>
+}
+```
+
+## Attributes
+
+You can also store scalar attributes along with array data with the `#[hdf5(attribute)]` attribute.
+All the previous attributes (with the exception of transposing) can be applied to scalar attributes as
+well.
+
+```
+use hdf5_derive::HDF5;
+use ndarray::Array3;
+use ndarray::Array5;
+
+#[derive(HDF5)]
+struct SolverResultWithAttribute {
+	high_dimensional_data: Array5<f64>,
+	#[hdf5(attribute)]
+	#[hdf5(mutate_on_write)]
+	current_timestep: u32,
 }
 ```
 

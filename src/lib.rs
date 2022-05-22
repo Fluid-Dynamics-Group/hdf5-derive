@@ -1,4 +1,4 @@
-//#![doc = include_str!("../README.md")]
+#![doc = include_str!("../README.md")]
 
 /// Derive read and write capabilities for a struct of arrays
 ///
@@ -10,6 +10,7 @@ pub use hdf5::Group;
 
 mod error;
 
+#[doc(hidden)]
 pub use error::*;
 
 /// Provides methods for reading and writing to an [`hdf5`] file. Derived with [`HDF5`] macro.
