@@ -198,3 +198,30 @@ struct SolverResultWithAttribute {
 `hdf5-derive` makes no attempt to partially load data from an array. Instead, the entire dataset specified is loaded
 into memory. If you wish to only access a slice from a large file, it may be more efficient to directly use the `hdf5`
 library.
+
+## Why cant you do this with trait based generics?
+
+In order to handle both attributes and arrays, you could definie a trait like this:
+
+```ignore
+trait Write {
+	// methods here
+}
+```
+
+and then implement it for both [`H5Type`](hdf5::H5Type) (attributes) and [`ArrayView`](ndarray::ArrayView):
+
+```ignore
+// for attributes
+impl Write for T where T: H5Type { }
+```
+
+and:
+
+```ignore
+// for generic arrays
+impl <'a, A, D> Write for ndarray::ArrayView<'a, A, D> {}
+```
+
+however, we will run into a compiler error: we have made a blanket implementation for `T` and cant guarantee that our 
+`ArrayView` type is not _also_ a `H5Type`. Therefore, the compiler will reject this implementation.

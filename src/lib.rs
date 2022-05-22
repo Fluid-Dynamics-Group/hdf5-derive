@@ -85,16 +85,6 @@ pub trait ContainerIo {
         Self: Sized;
 }
 
-impl <T> ContainerIo for T where T : hdf5::H5Type {
-    fn write_hdf5(&self, container: &File) -> Result<(), Error> {
-        todo!()
-    }
-    fn read_hdf5(container: &Group) -> Result<Self, Error> {
-        todo!()
-    }
-}
-
-
 #[derive(thiserror::Error, Debug)]
 /// General error type that provides helpful information on what went wrong
 pub enum Error {
