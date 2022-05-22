@@ -85,14 +85,57 @@ pub trait ContainerIo {
         Self: Sized;
 }
 
-impl <T> ContainerIo for T where T : hdf5::H5Type {
-    fn write_hdf5(&self, container: &File) -> Result<(), Error> {
+pub struct WriteOptions {
+    mutate_on_write: bool,
+    transpose: bool
+}
+
+pub struct ReadOptions {
+    transpose: bool
+}
+
+pub trait DatasetIo {
+    fn read_field(container: &Group, name: &str, opts: ReadOptions) -> Result<Self, Error> where Self: Sized;
+    fn write_field(&self, container: &Group, name: &str, opts: WriteOptions) -> Result<(), Error>;
+}
+
+// IO for generic H5 Type
+impl <T> DatasetIo for T where T: hdf5::H5Type {
+    fn read_field(container: &Group, name: &str, _: ReadOptions) -> Result<T, Error> {
+        let attr = container.attr(name)
+            .map_err(|e| error::MissingAttribute::from_field_name(name, e))?;
+        let val = attr.read_scalar::<T>()
+            .map_err(|e| error::SerializeAttribute::from_field_name(name, e))?;
+
+        Ok(val)
+    }
+    fn write_field(&self, container: &Group, name: &str, opts: WriteOptions) -> Result<(), Error> {
+        let attribute = if opts.mutate_on_write {
+            container.attr(name)
+                .map_err(|e| error::FetchAttribute::from_field_name(name, e))? 
+        } else {
+            container.new_attr::<T>()
+                .create(name)
+                .map_err(|e| error::CreateAttribute::from_field_name(name, e))?
+        };
+
+        attribute.write_scalar(self)
+            .map_err(|e| error::WriteAttribute::from_field_name(name, e))?;
+
+        Ok(())
+    }
+}
+
+// IO for generic H5 Type
+impl <'a, A, D> DatasetIo for ndarray::ArrayView<'a, A, D> {
+    fn read_field(container: &Group, name: &str, opts: ReadOptions) -> Result<Self, Error> {
         todo!()
     }
-    fn read_hdf5(container: &Group) -> Result<Self, Error> {
+    fn write_field(&self, container: &Group, name: &str, opts: WriteOptions) -> Result<(), Error> {
         todo!()
     }
 }
+
 
 
 #[derive(thiserror::Error, Debug)]
