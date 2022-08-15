@@ -2,6 +2,8 @@
 
 read and write arrays from an hdf5 file to a struct
 
+[Documentation](https://fluid-dynamics-group.github.io/hdf5-derive-docs/hdf5_derive/index.html)
+
 ## Usage
 
 You can use the `hdf5_derive::HDF5` derive macro to make you struct of [`ndarray::Array<T>`](`ndarray::Array`) data writeable. The macro
