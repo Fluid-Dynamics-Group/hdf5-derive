@@ -7,7 +7,7 @@ read and write arrays from an hdf5 file to a struct
 You can use the `hdf5_derive::HDF5` derive macro to make you struct of [`ndarray::Array<T>`](`ndarray::Array`) data writeable. The macro
 derives the [`ContainerIo`] trait, which provides a `.write_hdf5` and `read_hdf5` method.
 
-```
+```rust
 use hdf5_derive::{HDF5, ContainerIo};
 use ndarray::Array3;
 use ndarray::Array4;
@@ -67,7 +67,7 @@ examples of column major indexing are:
 Since `hdf5` has no sense of the order of the matrices stored, you must manually transpose the arrays read. You can do this through
 the `transpose` attribute:
 
-```
+```rust
 use hdf5_derive::HDF5;
 use ndarray::Array3;
 
@@ -87,7 +87,7 @@ The possible options for the transpose argument are:
 
 You can override a container level attribute on a field as well:
 
-```
+```rust
 use hdf5_derive::HDF5;
 use ndarray::Array3;
 
@@ -105,7 +105,7 @@ struct FortranData {
 By default, `hdf5_derive` looks for a dataset in the provided file with an identical name as the struct member.
 You can use the `rename` attribute to change what should be read (or written) with a file:
 
-```
+```rust
 use hdf5_derive::HDF5;
 use ndarray::Array4;
 
@@ -118,7 +118,7 @@ struct RenamedData {
 
 or:
 
-```
+```rust
 use hdf5_derive::HDF5;
 use ndarray::Array4;
 
@@ -142,7 +142,7 @@ You can use container level attributes or field level attributes to specify the 
 level attribute will change the default behavior of all fields, but a field level attribute will supersede any container
 level attributes (similar to `#[transpose]`). To mutate all fields in a struct:
 
-```
+```rust
 use hdf5_derive::HDF5;
 use ndarray::Array2;
 
@@ -157,7 +157,7 @@ struct MutateData {
 If you are mutating some fields of an `hdf5` file while creating new fields for others, you can mix and match 
 `mutate_on_write` for your desired behavior:
 
-```
+```rust
 use hdf5_derive::HDF5;
 use ndarray::Array2;
 
@@ -188,7 +188,7 @@ You can also store scalar attributes along with array data with the `#[hdf5(attr
 All the previous attributes (with the exception of transposing) can be applied to scalar attributes as
 well.
 
-```
+```rust
 use hdf5_derive::HDF5;
 use ndarray::Array3;
 use ndarray::Array5;
@@ -212,7 +212,7 @@ library.
 
 In order to handle both attributes and arrays, you could definie a trait like this:
 
-```ignore
+```rust,ignore
 trait Write {
 	// methods here
 }
@@ -220,14 +220,14 @@ trait Write {
 
 and then implement it for both [`H5Type`](hdf5::H5Type) (attributes) and [`ArrayView`](ndarray::ArrayView):
 
-```ignore
+```rust,ignore
 // for attributes
 impl Write for T where T: H5Type { }
 ```
 
 and:
 
-```ignore
+```rust,ignore
 // for generic arrays
 impl <'a, A, D> Write for ndarray::ArrayView<'a, A, D> {}
 ```
