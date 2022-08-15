@@ -17,6 +17,9 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+      - name: Install hdf5 libraries
+        run: |
+          sudo apt-get install libhdf5-dev -y
       - name: Build documentation
         run: cargo doc --no-deps
       - name: Deploy to GH-Pages
@@ -24,5 +27,5 @@ jobs:
         with:
           external_repository: Fluid-Dynamics-Group/hdf5-derive-docs
           personal_token: ${{ secrets.PERSONAL_TOKEN }}
-          publish_dir: ./
+          publish_dir: ./target/doc
           publish_branch: gh-pages
