@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 hdf5 = "0.8.1"
-thiserror = "1.0.31"
+thiserror = "^1.0.0"
 macros = { path = "./macros" }
 ndarray = "0.15.4"
