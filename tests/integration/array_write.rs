@@ -213,11 +213,9 @@ struct MutateOnWriteDifferentShapes {
     one: Array2<usize>,
 }
 
-#[derive(ContainerWrite, ContainerRead)]
-//struct DifferentShapes<'a> {
-struct DifferentShapes {
-    //one: ArrayView2<'a, usize>,
-    one: Array2<usize>,
+#[derive(ContainerWrite)]
+struct DifferentShapes<'a> {
+    one: ArrayView2<'a, usize>,
 }
 
 #[test]
@@ -228,8 +226,7 @@ fn mutate_on_write_different_shapes() {
     let arr = Array2::zeros((5, 4));
     let arr_another = Array2::zeros((3, 2));
 
-    //let h5_writer = DifferentShapes { one: arr.view() };
-    let h5_writer = DifferentShapes { one: arr.clone() };
+    let h5_writer = DifferentShapes { one: arr.view() };
     h5_writer.write_hdf5(&file).unwrap();
 
     // then read the data into a struct that mutates it when it writes

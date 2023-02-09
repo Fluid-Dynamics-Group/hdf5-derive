@@ -1,8 +1,5 @@
 #![doc = include_str!("../README.md")]
 
-/// Derive read and write capabilities for a struct of arrays
-///
-/// refer to the [crate-level](index.html) documentation
 pub use macros::{ContainerRead, ContainerWrite};
 
 pub use hdf5::File;
@@ -15,7 +12,8 @@ pub use error::*;
 
 use num_traits::Zero;
 
-/// Provides methods for reading and writing to an [`hdf5`] file. Derived with [`HDF5`] macro.
+/// Provides methods for writing a struct's contents to a file. Derived with [`ContainerWrite`]
+/// proc macro.
 pub trait ContainerWrite {
     /// write the contents of a struct to an HDF5 file
     ///
@@ -50,6 +48,8 @@ pub trait ContainerWrite {
     fn write_hdf5(&self, container: &File) -> Result<(), Error>;
 }
 
+/// Provides methods for reading a struct's contents to a file. Derived with [`ContainerRead`]
+/// proc macro.
 pub trait ContainerRead {
     /// read the contents of an HDF5 file to `Self`
     ///
@@ -194,6 +194,8 @@ macro_rules! attributes{
 
 attributes!(f32, f64, i16, i32, i64, i8, isize, u16, u8, u32, u64, usize);
 
+/// Defines how a given piece of data should be parsed. 
+/// You likely do not want to use this trait; instead use the methods from [`ContainerRead`]
 pub trait ReadGroup {
     fn read_group(group: &Group, array_name: &str, transpose: bool) -> Result<Self, Error>
     where
@@ -227,6 +229,8 @@ where
     }
 }
 
+/// Defines how a given piece of data should be written. 
+/// You likely do not want to use this trait; instead use the methods from [`ContainerWrite`]
 pub trait WriteGroup {
     fn write_group(
         &self,

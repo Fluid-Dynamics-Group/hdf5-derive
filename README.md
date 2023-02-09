@@ -6,8 +6,9 @@ read and write arrays from an hdf5 file to a struct
 
 ## Usage
 
-You can use the `hdf5_derive::HDF5` derive macro to make you struct of [`ndarray::Array<T>`](`ndarray::Array`) data writeable. The macro
-derives the [`ContainerIo`] trait, which provides a `.write_hdf5` and `read_hdf5` method.
+You can use the `hdf5_derive::ContainerWrite` derive macro to make you struct of [`ndarray::Array<T>`](`ndarray::Array`) (or array view) data writeable. The macro
+derives the [`ContainerWrite`] trait, which provides a `.write_hdf5` method. Conversely, you can make a struct readable from a hdf5 file with `hdf5_derive::ContainerRead`,
+which derives the [`ContainerRead`] trait. Reference types cannot implement [`ContainerRead`].
 
 ```rust
 use hdf5_derive::{ContainerRead, ContainerWrite};
@@ -184,7 +185,7 @@ you can also avoid the issue if you dont use `#[mutate_on_write]` and instead wr
 
 ## Attributes
 
-You can also store scalar attributes along with array data with the `#[hdf5(attribute)]` attribute.
+You can also store scalar-valued attributes along with array.
 All the previous attributes (with the exception of transposing) can be applied to scalar attributes as
 well.
 
