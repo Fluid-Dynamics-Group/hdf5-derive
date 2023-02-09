@@ -4,7 +4,7 @@ use hdf5_derive::HDF5;
 #[derive(HDF5)]
 struct SimpleAttributeRead {
     #[hdf5(attribute)]
-    some_value: u64
+    some_value: u64,
 }
 
 #[test]
@@ -14,9 +14,7 @@ fn simple_attribute_read() {
 
     let value = 999241;
 
-    let attr = file.new_attr::<u64>()
-        .create("some_value")
-        .unwrap();
+    let attr = file.new_attr::<u64>().create("some_value").unwrap();
 
     attr.write_scalar(&value).unwrap();
 
@@ -30,7 +28,7 @@ fn simple_attribute_read() {
 #[derive(HDF5)]
 struct SimpleAttributeWrite {
     #[hdf5(attribute)]
-    another_value: u64
+    another_value: u64,
 }
 
 #[test]
@@ -40,13 +38,12 @@ fn simple_attribute_write() {
 
     let value = 21298347;
 
-    let x = SimpleAttributeWrite { another_value: value };
+    let x = SimpleAttributeWrite {
+        another_value: value,
+    };
     x.write_hdf5(&file).unwrap();
 
-    let read_value = file.attr("another_value")
-        .unwrap()
-        .read_scalar()
-        .unwrap();
+    let read_value = file.attr("another_value").unwrap().read_scalar().unwrap();
 
     assert_eq!(value, read_value);
 
@@ -57,8 +54,8 @@ fn simple_attribute_write() {
 #[hdf5(mutate_on_write)]
 struct MutatedAttributeWrite {
     #[hdf5(attribute)]
-    #[hdf5(rename(both="renamed_value"))]
-    mutated_value: u64
+    #[hdf5(rename(both = "renamed_value"))]
+    mutated_value: u64,
 }
 
 #[test]
@@ -68,9 +65,7 @@ fn mutated_attribute_write() {
 
     let value = 23894;
 
-    let attr = file.new_attr::<u64>()
-        .create("renamed_value")
-        .unwrap();
+    let attr = file.new_attr::<u64>().create("renamed_value").unwrap();
 
     attr.write_scalar(&value).unwrap();
 
@@ -79,13 +74,13 @@ fn mutated_attribute_write() {
 
     assert_eq!(read_struct.mutated_value, value);
 
-    // assign the new value to the struct 
+    // assign the new value to the struct
     read_struct.mutated_value = new_value;
     read_struct.write_hdf5(&file).unwrap();
 
     // then re-read the file and make sure the new value
     let reread_struct = MutatedAttributeWrite::read_hdf5(&file).unwrap();
     assert_eq!(reread_struct.mutated_value, new_value);
-    
+
     std::fs::remove_file(&path).unwrap();
 }

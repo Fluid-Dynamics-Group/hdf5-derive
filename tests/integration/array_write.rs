@@ -165,7 +165,7 @@ fn manually_transposed_array() {
 }
 
 #[derive(HDF5)]
-#[hdf5(mutate_on_write=true)]
+#[hdf5(mutate_on_write = true)]
 struct MutateOnWrite {
     one: Arr3,
 }
@@ -187,10 +187,9 @@ fn mutate_on_write() {
     .into_shape(shape)
     .unwrap();
 
-     // create an existing dataset so we will error in .write_hdf5()
-     // if we try to create it without mutating
-     file
-        .new_dataset::<f64>()
+    // create an existing dataset so we will error in .write_hdf5()
+    // if we try to create it without mutating
+    file.new_dataset::<f64>()
         .shape(shape)
         .create("one")
         .unwrap();
@@ -208,7 +207,7 @@ fn mutate_on_write() {
 }
 
 #[derive(HDF5)]
-#[hdf5(mutate_on_write=true)]
+#[hdf5(mutate_on_write = true)]
 struct MutateOnWriteDifferentShapes {
     one: Array2<usize>,
 }
@@ -223,10 +222,10 @@ fn mutate_on_write_different_shapes() {
     let path = "mutate_on_write_different_shapes.h5";
     let file = hdf5::File::create(&path).unwrap();
 
-    let arr = Array2::zeros((5,4));
-    let arr_another = Array2::zeros((3,2));
-    
-    let h5_writer = DifferentShapes {one : arr.clone() };
+    let arr = Array2::zeros((5, 4));
+    let arr_another = Array2::zeros((3, 2));
+
+    let h5_writer = DifferentShapes { one: arr.clone() };
     h5_writer.write_hdf5(&file).unwrap();
 
     // then read the data into a struct that mutates it when it writes

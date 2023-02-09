@@ -143,3 +143,64 @@ where
 {
     type Ty = <S as ndarray::RawData>::Elem;
 }
+
+enum FlatTypeDescriptor {
+    Dataset,
+    Attribute,
+    Container,
+}
+
+trait DataType {
+    fn type_descriptor() -> FlatTypeDescriptor;
+}
+
+macro_rules! scalar_descriptor {
+    ($($scalar_type:ty),+) => {
+        $(
+            impl DataType for $scalar_type {
+                fn type_descriptor() -> FlatTypeDescriptor {
+                    FlatTypeDescriptor::Attribute
+                }
+            }
+        )+
+    }
+}
+
+scalar_descriptor!(f32, f64, i16, i32, i64, i8, isize, u16, u8, u32, u64, usize);
+
+/// all arrays have the dataset type
+impl<S, D> DataType for ndarray::ArrayBase<S, D>
+where
+    S: ndarray::RawData,
+{
+    fn type_descriptor() -> FlatTypeDescriptor {
+        FlatTypeDescriptor::Dataset
+    }
+}
+
+trait ReadArray {
+    fn read_array(group: &Group, array_name: &str, transpose: bool) -> Result<Self, Error> where Self: Sized;
+}
+
+impl <S, D> ReadArray for ndarray::ArrayBase<ndarray::OwnedRepr<S>,D> 
+    where S: ndarray::RawData + hdf5::H5Type,
+          D: ndarray::Dimension
+{
+    fn read_array(group: &Group, array_name: &str, transpose: bool) -> Result<Self, Error> 
+    where Self: Sized 
+    {
+        let dataset = group.dataset(array_name)
+            .map_err(|e| MissingDataset::from_field_name(array_name, e))?;
+        let output_array  : Self = dataset.read()
+            .map_err(|e| SerializeArray::from_field_name(array_name, e))?;
+
+        // handle transposing the array
+        let output_array = if transpose {
+             output_array.reversed_axes()
+        } else {
+            output_array
+        };
+
+        Ok(output_array)
+    }
+}

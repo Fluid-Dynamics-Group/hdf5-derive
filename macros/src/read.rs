@@ -43,24 +43,28 @@ fn array_codegen(mut body: TokenStream, info: &ReadInfo, span: Span) -> TokenStr
 
     let array_name_literal = syn::LitStr::new(&array_name, span);
 
-    body = quote!(
+    //body = quote!(
+    //    #body
+
+    //    let #field_name = group.dataset(#array_name_literal)
+    //        .map_err(|e| hdf5_derive::MissingDataset::from_field_name(#array_name_literal, e))?;
+    //    let #field_name : #field_type = #field_name.read()
+    //        .map_err(|e| hdf5_derive::SerializeArray::from_field_name(#array_name_literal, e))?;
+    //);
+
+    //// transpose the array if we need to 
+    //if *transpose {
+    //    body = quote!(
+    //        #body
+    //        let #field_name = #field_name.reversed_axes();
+    //    )
+    //}
+
+    quote!(
         #body
 
-        let #field_name = group.dataset(#array_name_literal)
-            .map_err(|e| hdf5_derive::MissingDataset::from_field_name(#array_name_literal, e))?;
-        let #field_name : #field_type = #field_name.read()
-            .map_err(|e| hdf5_derive::SerializeArray::from_field_name(#array_name_literal, e))?;
-    );
-
-    // transpose the array if we need to 
-    if *transpose {
-        body = quote!(
-            #body
-            let #field_name = #field_name.reversed_axes();
-        )
-    }
-
-    body
+        let #field_name : #field_type = hdf5_derive::ReadArray::read_array(group,  #array_name_literal, #transpose)?;
+    )
 }
 
 fn attribute_codegen(mut body: TokenStream, info: &ReadInfo, span: Span) -> TokenStream {
