@@ -1,27 +1,32 @@
 //use proc_macro::TokenStream;
 use proc_macro2::TokenStream;
-use syn::Result;
+use syn::{DeriveInput, Result};
+use syn::spanned::Spanned;
 use quote::quote;
 use proc_macro2::Span;
 use syn::punctuated::Punctuated;
+use super::{fields_from_input, FieldReceiver};
 
 pub(crate) struct ReadInfo {
     pub(crate) field_name: syn::Ident,
     pub(crate) field_type: syn::Type,
     pub(crate) array_name: String,
     pub(crate) transpose: bool,
-    pub(crate) is_attribute: bool,
 }
 
 pub(crate) fn read_codegen(ident: syn::Ident, span: Span, arrays: &[ReadInfo]) -> Result<TokenStream> {
     let mut body = quote!();
 
+
     for array_or_attribute in arrays {
-        body = if array_or_attribute.is_attribute {
-            attribute_codegen(body, &array_or_attribute, span)
-        } else {
-            array_codegen(body, &array_or_attribute, span)
-        }
+        let ReadInfo { field_name, field_type, array_name, transpose } = array_or_attribute;
+
+        let name = syn::LitStr::new(&array_name, span);
+
+        body = quote!(
+            #body
+            let #field_name : #field_type = hdf5_derive::ReadGroup::read_group(group, #name, #transpose)?;
+        );
     }
 
     // build the final return statement
@@ -38,44 +43,36 @@ pub(crate) fn read_codegen(ident: syn::Ident, span: Span, arrays: &[ReadInfo]) -
     Ok(full_impl)
 }
 
-fn array_codegen(mut body: TokenStream, info: &ReadInfo, span: Span) -> TokenStream {
-    let ReadInfo {field_name, field_type, array_name, transpose, is_attribute: _} = info;
+pub(crate) fn derive_container_read(input: DeriveInput) -> Result<TokenStream> {
+    let (receiver, fields_information) = fields_from_input(&input)?;
 
-    let array_name_literal = syn::LitStr::new(&array_name, span);
+    // build the reading body:
+    let read_data: Vec<ReadInfo> = fields_information
+        .iter()
+        .map(|rx: &FieldReceiver| {
+            let field_name = rx.ident.clone().unwrap();
+            let field_type = rx.ty.clone();
+            let transpose = rx.transpose.unwrap_or(receiver.transpose).transpose_read();
 
-    body = quote!(
-        #body
+            let array_name = rx.rename.read_name_or_ident(&field_name);
 
-        let #field_name = group.dataset(#array_name_literal)
-            .map_err(|e| hdf5_derive::MissingDataset::from_field_name(#array_name_literal, e))?;
-        let #field_name : #field_type = #field_name.read()
-            .map_err(|e| hdf5_derive::SerializeArray::from_field_name(#array_name_literal, e))?;
-    );
+            ReadInfo {field_name, field_type, transpose, array_name }
 
-    // transpose the array if we need to 
-    if *transpose {
-        body = quote!(
-            #body
-            let #field_name = #field_name.reversed_axes();
-        )
-    }
+        }).collect();
 
-    body
-}
 
-fn attribute_codegen(mut body: TokenStream, info: &ReadInfo, span: Span) -> TokenStream {
-    let ReadInfo {field_name, field_type, array_name, transpose: _, is_attribute: _} = info;
+    let read_impl = read_codegen(receiver.ident.clone(), input.span(), &read_data)?;
 
-    let attribute_name_literal = syn::LitStr::new(&array_name, span);
+    let (imp, ty, wher) = receiver.generics.split_for_impl();
+    let ident = receiver.ident.clone();
 
-    body = quote!(
-        #body
+    let output = quote::quote!(
+        impl #imp hdf5_derive::ContainerRead for #ident #ty #wher {
+            fn read_hdf5(group: &hdf5_derive::Group) -> Result<Self, hdf5_derive::Error> {
+                #read_impl
+            }
+        }
+    ).into();
 
-        let #field_name = group.attr(#attribute_name_literal)
-            .map_err(|e| hdf5_derive::MissingAttribute::from_field_name(#attribute_name_literal, e))?;
-        let #field_name : #field_type = #field_name.read_scalar()
-            .map_err(|e| hdf5_derive::SerializeAttribute::from_field_name(#attribute_name_literal, e))?;
-    );
-
-    body
+    Ok(output)
 }

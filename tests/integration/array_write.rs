@@ -1,12 +1,13 @@
-use hdf5_derive::ContainerIo;
 use hdf5_derive::File;
-use macros::HDF5;
+use hdf5_derive::{ContainerWrite, ContainerRead};
 use std::fs;
 
 type Arr3 = ndarray::Array3<f64>;
-use ndarray::Array2;
 
-#[derive(HDF5)]
+use ndarray::Array2;
+use ndarray::ArrayView2;
+
+#[derive(ContainerWrite, ContainerRead)]
 struct TestWrite {
     one: Arr3,
 }
@@ -34,7 +35,7 @@ fn simple_write_array() {
     fs::remove_file(path).ok();
 }
 
-#[derive(HDF5)]
+#[derive(ContainerWrite, ContainerRead)]
 struct TransposeWrite {
     #[hdf5(transpose = "write")]
     one: Arr3,
@@ -63,7 +64,7 @@ fn write_transposed() {
     fs::remove_file(path).ok();
 }
 
-#[derive(HDF5)]
+#[derive(ContainerWrite, ContainerRead)]
 #[hdf5(transpose = "write")]
 struct TransposeWriteInherit {
     one: Arr3,
@@ -92,7 +93,7 @@ fn write_transposed_inherit() {
     fs::remove_file(path).ok();
 }
 
-#[derive(HDF5)]
+#[derive(ContainerWrite, ContainerRead)]
 #[hdf5(transpose = "write")]
 struct TransposeWriteOverride {
     #[hdf5(transpose = "none")]
@@ -122,7 +123,7 @@ fn write_transposed_override() {
     fs::remove_file(path).ok();
 }
 
-#[derive(HDF5)]
+#[derive(ContainerWrite, ContainerRead)]
 struct ManuallyTransposedArray {
     #[hdf5(transpose = "write")]
     one: Arr3,
@@ -164,8 +165,8 @@ fn manually_transposed_array() {
     fs::remove_file(path).ok();
 }
 
-#[derive(HDF5)]
-#[hdf5(mutate_on_write=true)]
+#[derive(ContainerWrite, ContainerRead)]
+#[hdf5(mutate_on_write = true)]
 struct MutateOnWrite {
     one: Arr3,
 }
@@ -187,10 +188,9 @@ fn mutate_on_write() {
     .into_shape(shape)
     .unwrap();
 
-     // create an existing dataset so we will error in .write_hdf5()
-     // if we try to create it without mutating
-     file
-        .new_dataset::<f64>()
+    // create an existing dataset so we will error in .write_hdf5()
+    // if we try to create it without mutating
+    file.new_dataset::<f64>()
         .shape(shape)
         .create("one")
         .unwrap();
@@ -207,15 +207,15 @@ fn mutate_on_write() {
     fs::remove_file(path).ok();
 }
 
-#[derive(HDF5)]
-#[hdf5(mutate_on_write=true)]
+#[derive(ContainerWrite, ContainerRead)]
+#[hdf5(mutate_on_write = true)]
 struct MutateOnWriteDifferentShapes {
     one: Array2<usize>,
 }
 
-#[derive(HDF5)]
-struct DifferentShapes {
-    one: Array2<usize>,
+#[derive(ContainerWrite)]
+struct DifferentShapes<'a> {
+    one: ArrayView2<'a, usize>,
 }
 
 #[test]
@@ -223,10 +223,10 @@ fn mutate_on_write_different_shapes() {
     let path = "mutate_on_write_different_shapes.h5";
     let file = hdf5::File::create(&path).unwrap();
 
-    let arr = Array2::zeros((5,4));
-    let arr_another = Array2::zeros((3,2));
-    
-    let h5_writer = DifferentShapes {one : arr.clone() };
+    let arr = Array2::zeros((5, 4));
+    let arr_another = Array2::zeros((3, 2));
+
+    let h5_writer = DifferentShapes { one: arr.view() };
     h5_writer.write_hdf5(&file).unwrap();
 
     // then read the data into a struct that mutates it when it writes

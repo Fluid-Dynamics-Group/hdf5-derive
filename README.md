@@ -6,24 +6,23 @@ read and write arrays from an hdf5 file to a struct
 
 ## Usage
 
-You can use the `hdf5_derive::HDF5` derive macro to make you struct of [`ndarray::Array<T>`](`ndarray::Array`) data writeable. The macro
-derives the [`ContainerIo`] trait, which provides a `.write_hdf5` and `read_hdf5` method.
+You can use the `hdf5_derive::ContainerWrite` derive macro to make you struct of [`ndarray::Array<T>`](`ndarray::Array`) (or array view) data writeable. The macro
+derives the [`ContainerWrite`] trait, which provides a `.write_hdf5` method. Conversely, you can make a struct readable from a hdf5 file with `hdf5_derive::ContainerRead`,
+which derives the [`ContainerRead`] trait. Reference types cannot implement [`ContainerRead`].
 
 ```rust
-use hdf5_derive::{HDF5, ContainerIo};
+use hdf5_derive::{ContainerRead, ContainerWrite};
 use ndarray::Array3;
 use ndarray::Array4;
 
 let N = 100;
 
-#[derive(HDF5)]
+#[derive(ContainerRead, ContainerWrite)]
 struct Data {
 	pressure: Array3<f64>,
 	velocity: Array4<f64>,
 	temperature: Array3<f64>,
-	#[hdf5(attribute)]
 	reynolds_number: f64,
-	#[hdf5(attribute)]
 	timesteps: u64,
 }
 
@@ -70,10 +69,10 @@ Since `hdf5` has no sense of the order of the matrices stored, you must manually
 the `transpose` attribute:
 
 ```rust
-use hdf5_derive::HDF5;
+use hdf5_derive::{ContainerRead, ContainerWrite};
 use ndarray::Array3;
 
-#[derive(HDF5)]
+#[derive(ContainerRead, ContainerWrite)]
 #[hdf5(transpose="read")]
 struct FortranData {
 	array: ndarray::Array3<u8>
@@ -90,10 +89,10 @@ The possible options for the transpose argument are:
 You can override a container level attribute on a field as well:
 
 ```rust
-use hdf5_derive::HDF5;
+use hdf5_derive::{ContainerRead, ContainerWrite};
 use ndarray::Array3;
 
-#[derive(HDF5)]
+#[derive(ContainerRead, ContainerWrite)]
 #[hdf5(transpose="both")]
 struct FortranData {
 	#[hdf5(transpose="none")]
@@ -108,10 +107,10 @@ By default, `hdf5_derive` looks for a dataset in the provided file with an ident
 You can use the `rename` attribute to change what should be read (or written) with a file:
 
 ```rust
-use hdf5_derive::HDF5;
+use hdf5_derive::{ContainerRead, ContainerWrite};
 use ndarray::Array4;
 
-#[derive(HDF5)]
+#[derive(ContainerRead, ContainerWrite)]
 struct RenamedData {
 	#[hdf5(rename(write="my_array", read = "array_name_in_file"))]
 	array: ndarray::Array3<usize>
@@ -121,10 +120,10 @@ struct RenamedData {
 or:
 
 ```rust
-use hdf5_derive::HDF5;
+use hdf5_derive::{ContainerRead, ContainerWrite};
 use ndarray::Array4;
 
-#[derive(HDF5)]
+#[derive(ContainerRead, ContainerWrite)]
 struct RenamedData {
 	#[hdf5(rename(both = "my_array"))]
 	array: ndarray::Array3<usize>
@@ -145,10 +144,10 @@ level attribute will change the default behavior of all fields, but a field leve
 level attributes (similar to `#[transpose]`). To mutate all fields in a struct:
 
 ```rust
-use hdf5_derive::HDF5;
+use hdf5_derive::{ContainerRead, ContainerWrite};
 use ndarray::Array2;
 
-#[derive(HDF5)]
+#[derive(ContainerRead, ContainerWrite)]
 #[hdf5(mutate_on_write)]
 struct MutateData {
 	// a dataset named `array` is now expected to already exist
@@ -160,10 +159,10 @@ If you are mutating some fields of an `hdf5` file while creating new fields for 
 `mutate_on_write` for your desired behavior:
 
 ```rust
-use hdf5_derive::HDF5;
+use hdf5_derive::{ContainerRead, ContainerWrite};
 use ndarray::Array2;
 
-#[derive(HDF5)]
+#[derive(ContainerRead, ContainerWrite)]
 #[hdf5(mutate_on_write)]
 struct MutateData {
 	// a dataset named `array` is now expected to already exist
@@ -186,19 +185,18 @@ you can also avoid the issue if you dont use `#[mutate_on_write]` and instead wr
 
 ## Attributes
 
-You can also store scalar attributes along with array data with the `#[hdf5(attribute)]` attribute.
+You can also store scalar-valued attributes along with array.
 All the previous attributes (with the exception of transposing) can be applied to scalar attributes as
 well.
 
 ```rust
-use hdf5_derive::HDF5;
+use hdf5_derive::{ContainerRead, ContainerWrite};
 use ndarray::Array3;
 use ndarray::Array5;
 
-#[derive(HDF5)]
+#[derive(ContainerRead, ContainerWrite)]
 struct SolverResultWithAttribute {
 	high_dimensional_data: Array5<f64>,
-	#[hdf5(attribute)]
 	#[hdf5(mutate_on_write)]
 	current_timestep: u32,
 }
@@ -209,30 +207,3 @@ struct SolverResultWithAttribute {
 `hdf5-derive` makes no attempt to partially load data from an array. Instead, the entire dataset specified is loaded
 into memory. If you wish to only access a slice from a large file, it may be more efficient to directly use the `hdf5`
 library.
-
-## Why cant you do this with trait based generics?
-
-In order to handle both attributes and arrays, you could definie a trait like this:
-
-```rust,ignore
-trait Write {
-	// methods here
-}
-```
-
-and then implement it for both [`H5Type`](hdf5::H5Type) (attributes) and [`ArrayView`](ndarray::ArrayView):
-
-```rust,ignore
-// for attributes
-impl Write for T where T: H5Type { }
-```
-
-and:
-
-```rust,ignore
-// for generic arrays
-impl <'a, A, D> Write for ndarray::ArrayView<'a, A, D> {}
-```
-
-however, we will run into a compiler error: we have made a blanket implementation for `T` and cant guarantee that our 
-`ArrayView` type is not _also_ a `H5Type`. Therefore, the compiler will reject this implementation.
