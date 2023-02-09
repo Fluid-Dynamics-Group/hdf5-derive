@@ -21,9 +21,7 @@ struct Data {
 	pressure: Array3<f64>,
 	velocity: Array4<f64>,
 	temperature: Array3<f64>,
-	#[hdf5(attribute)]
 	reynolds_number: f64,
-	#[hdf5(attribute)]
 	timesteps: u64,
 }
 
@@ -198,7 +196,6 @@ use ndarray::Array5;
 #[derive(HDF5)]
 struct SolverResultWithAttribute {
 	high_dimensional_data: Array5<f64>,
-	#[hdf5(attribute)]
 	#[hdf5(mutate_on_write)]
 	current_timestep: u32,
 }

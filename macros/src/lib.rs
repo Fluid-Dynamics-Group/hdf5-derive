@@ -106,11 +106,6 @@ struct FieldReceiver {
 
     #[darling(default)]
     mutate_on_write: Option<bool>,
-
-
-    #[darling(default)]
-    #[darling(rename = "attribute")]
-    is_attribute: bool
 }
 
 fn derive(input: DeriveInput) -> Result<TokenStream> {
@@ -154,14 +149,12 @@ fn derive(input: DeriveInput) -> Result<TokenStream> {
         .iter()
         .map(|rx: &FieldReceiver| {
             let field_name = rx.ident.clone().unwrap();
-            let field_type = rx.ty.clone();
             let transpose = rx.transpose.unwrap_or(receiver.transpose).transpose_write();
             let array_name = rx.rename.write_name_or_ident(&field_name);
 
             let mutate_on_write = rx.mutate_on_write.unwrap_or(receiver.mutate_on_write);
-            let is_attribute = rx.is_attribute;
 
-            write::WriteInfo {field_name, field_type, transpose, array_name, mutate_on_write, is_attribute}
+            write::WriteInfo {field_name, transpose, array_name, mutate_on_write}
 
         }).collect();
 

@@ -3,7 +3,6 @@ use hdf5_derive::HDF5;
 
 #[derive(HDF5)]
 struct SimpleAttributeRead {
-    #[hdf5(attribute)]
     some_value: u64,
 }
 
@@ -27,7 +26,6 @@ fn simple_attribute_read() {
 
 #[derive(HDF5)]
 struct SimpleAttributeWrite {
-    #[hdf5(attribute)]
     another_value: u64,
 }
 
@@ -53,7 +51,6 @@ fn simple_attribute_write() {
 #[derive(HDF5)]
 #[hdf5(mutate_on_write)]
 struct MutatedAttributeWrite {
-    #[hdf5(attribute)]
     #[hdf5(rename(both = "renamed_value"))]
     mutated_value: u64,
 }

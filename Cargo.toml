@@ -10,3 +10,4 @@ hdf5 = "0.8.1"
 thiserror = "^1.0.0"
 macros = { path = "./macros" }
 ndarray = "0.15.4"
+num-traits = "0.2.15"

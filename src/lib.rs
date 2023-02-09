@@ -13,6 +13,8 @@ pub mod error;
 #[doc(hidden)]
 pub use error::*;
 
+use num_traits::Zero;
+
 /// Provides methods for reading and writing to an [`hdf5`] file. Derived with [`HDF5`] macro.
 pub trait ContainerIo {
     /// write the contents of a struct to an HDF5 file
@@ -158,6 +160,33 @@ macro_rules! read_attribute {
                     Ok(attribute)
                 }
             }
+            impl WriteGroup for $scalar_type {
+                fn write_group(
+                    &self,
+                    group: &Group,
+                    attribute_name: &str,
+                    _transpose: bool,
+                    mutate_on_write: bool,
+                ) -> Result<(), Error>
+                where
+                    Self: Sized
+                {
+                    let hdf5_attribute = if mutate_on_write {
+                        group.attr(attribute_name)
+                            .map_err(|e| error::FetchAttribute::from_field_name(attribute_name, e))?
+                    } else {
+                        group.new_attr::<Self>()
+                            .create(attribute_name)
+                            .map_err(|e| error::CreateAttribute::from_field_name(attribute_name, e))?
+                    };
+
+                    hdf5_attribute.write_scalar(self)
+                        .map_err(|e| error::WriteAttribute::from_field_name(attribute_name, e))?;
+
+
+                    Ok(())
+                }
+            }
         )+
     }
 }
@@ -165,28 +194,91 @@ macro_rules! read_attribute {
 read_attribute!(f32, f64, i16, i32, i64, i8, isize, u16, u8, u32, u64, usize);
 
 pub trait ReadGroup {
-    fn read_group(group: &Group, array_name: &str, transpose: bool) -> Result<Self, Error> where Self: Sized;
+    fn read_group(group: &Group, array_name: &str, transpose: bool) -> Result<Self, Error>
+    where
+        Self: Sized;
 }
 
-impl <S, D> ReadGroup for ndarray::ArrayBase<ndarray::OwnedRepr<S>,D> 
-    where S: hdf5::H5Type,
-          D: ndarray::Dimension
+impl<S, D> ReadGroup for ndarray::ArrayBase<ndarray::OwnedRepr<S>, D>
+where
+    S: hdf5::H5Type,
+    D: ndarray::Dimension,
 {
-    fn read_group(group: &Group, array_name: &str, transpose: bool) -> Result<Self, Error> 
-        where Self: Sized 
+    fn read_group(group: &Group, array_name: &str, transpose: bool) -> Result<Self, Error>
+    where
+        Self: Sized,
     {
-        let dataset = group.dataset(array_name)
+        let dataset = group
+            .dataset(array_name)
             .map_err(|e| MissingDataset::from_field_name(array_name, e))?;
-        let output_array  : Self = dataset.read()
+        let output_array: Self = dataset
+            .read()
             .map_err(|e| SerializeArray::from_field_name(array_name, e))?;
 
         // handle transposing the array
         let output_array = if transpose {
-             output_array.reversed_axes()
+            output_array.reversed_axes()
         } else {
             output_array
         };
 
         Ok(output_array)
+    }
+}
+
+pub trait WriteGroup {
+    fn write_group(
+        &self,
+        group: &Group,
+        array_name: &str,
+        transpose: bool,
+        mutate_on_write: bool,
+    ) -> Result<(), Error>
+    where
+        Self: Sized;
+}
+
+impl<S, D> WriteGroup for ndarray::ArrayBase<ndarray::OwnedRepr<S>, D>
+where
+    S: hdf5::H5Type + Zero + Clone,
+    D: ndarray::Dimension,
+{
+    fn write_group(
+        &self,
+        group: &Group,
+        array_name: &str,
+        transpose: bool,
+        mutate_on_write: bool,
+    ) -> Result<(), Error>
+    where
+        Self: Sized,
+    {
+        // handle the case in which we have to transpose the array
+        if transpose {
+            let mut tmp = ndarray::Array::zeros(self.t().dim());
+            tmp.assign(&self.t());
+
+            return tmp.write_group(group, array_name, false, mutate_on_write);
+        }
+
+        let fetch_dataset = if mutate_on_write {
+            // fetch an existing dataset that we can mutate
+            group
+                .dataset(array_name)
+                .map_err(|e| error::FetchDataset::from_field_name(array_name, e))?
+        } else {
+            // create a new dataset
+            group
+                .new_dataset::<<Self as ArrayType>::Ty>()
+                .shape(self.shape())
+                .create(array_name)
+                .map_err(|e| error::CreateDataset::from_field_name(array_name, e))?
+        };
+
+        fetch_dataset
+            .write(self.view())
+            .map_err(|e| error::WriteArray::from_field_name(array_name, e))?;
+
+        Ok(())
     }
 }
