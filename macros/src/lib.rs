@@ -144,10 +144,8 @@ fn derive(input: DeriveInput) -> Result<TokenStream> {
             let transpose = rx.transpose.unwrap_or(receiver.transpose).transpose_read();
 
             let array_name = rx.rename.read_name_or_ident(&field_name);
-            let is_attribute = rx.is_attribute;
-            //let array_name = field_name.to_string();
 
-            read::ReadInfo {field_name, field_type, transpose, array_name, is_attribute}
+            read::ReadInfo {field_name, field_type, transpose, array_name }
 
         }).collect();
 

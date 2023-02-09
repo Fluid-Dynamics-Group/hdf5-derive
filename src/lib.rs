@@ -144,50 +144,36 @@ where
     type Ty = <S as ndarray::RawData>::Elem;
 }
 
-enum FlatTypeDescriptor {
-    Dataset,
-    Attribute,
-    Container,
-}
-
-trait DataType {
-    fn type_descriptor() -> FlatTypeDescriptor;
-}
-
-macro_rules! scalar_descriptor {
+macro_rules! read_attribute {
     ($($scalar_type:ty),+) => {
         $(
-            impl DataType for $scalar_type {
-                fn type_descriptor() -> FlatTypeDescriptor {
-                    FlatTypeDescriptor::Attribute
+            impl ReadGroup for $scalar_type {
+                fn read_group(group: &Group, attribute_name: &str, _transpose: bool) -> Result<Self, Error> where Self: Sized {
+                    let attribute_handle = group.attr(attribute_name)
+                        .map_err(|e| error::MissingAttribute::from_field_name(attribute_name, e))?;
+
+                    let attribute: Self = attribute_handle.read_scalar()
+                        .map_err(|e| error::SerializeAttribute::from_field_name(attribute_name, e))?;
+
+                    Ok(attribute)
                 }
             }
         )+
     }
 }
 
-scalar_descriptor!(f32, f64, i16, i32, i64, i8, isize, u16, u8, u32, u64, usize);
+read_attribute!(f32, f64, i16, i32, i64, i8, isize, u16, u8, u32, u64, usize);
 
-/// all arrays have the dataset type
-impl<S, D> DataType for ndarray::ArrayBase<S, D>
-where
-    S: ndarray::RawData,
-{
-    fn type_descriptor() -> FlatTypeDescriptor {
-        FlatTypeDescriptor::Dataset
-    }
+pub trait ReadGroup {
+    fn read_group(group: &Group, array_name: &str, transpose: bool) -> Result<Self, Error> where Self: Sized;
 }
 
-trait ReadArray {
-    fn read_array(group: &Group, array_name: &str, transpose: bool) -> Result<Self, Error> where Self: Sized;
-}
-
-impl <S, D> ReadArray for ndarray::ArrayBase<ndarray::OwnedRepr<S>,D> 
-    where S: ndarray::RawData + hdf5::H5Type,
+impl <S, D> ReadGroup for ndarray::ArrayBase<ndarray::OwnedRepr<S>,D> 
+    where S: hdf5::H5Type,
           D: ndarray::Dimension
 {
-    fn read_array(group: &Group, array_name: &str, transpose: bool) -> Result<Self, Error> 
-    where Self: Sized 
+    fn read_group(group: &Group, array_name: &str, transpose: bool) -> Result<Self, Error> 
+        where Self: Sized 
     {
         let dataset = group.dataset(array_name)
             .map_err(|e| MissingDataset::from_field_name(array_name, e))?;
