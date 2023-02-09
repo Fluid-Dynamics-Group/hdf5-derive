@@ -16,7 +16,7 @@ pub use error::*;
 use num_traits::Zero;
 
 /// Provides methods for reading and writing to an [`hdf5`] file. Derived with [`HDF5`] macro.
-pub trait ContainerIo {
+pub trait ContainerWrite {
     /// write the contents of a struct to an HDF5 file
     ///
     ///
@@ -49,6 +49,9 @@ pub trait ContainerIo {
     /// std::fs::remove_file(path).unwrap();
     /// ```
     fn write_hdf5(&self, container: &File) -> Result<(), Error>;
+}
+
+pub trait ContainerRead {
     /// read the contents of an HDF5 file to `Self`
     ///
     /// ```
@@ -146,7 +149,7 @@ where
     type Ty = <S as ndarray::RawData>::Elem;
 }
 
-macro_rules! read_attribute {
+macro_rules! attributes{
     ($($scalar_type:ty),+) => {
         $(
             impl ReadGroup for $scalar_type {
@@ -191,7 +194,7 @@ macro_rules! read_attribute {
     }
 }
 
-read_attribute!(f32, f64, i16, i32, i64, i8, isize, u16, u8, u32, u64, usize);
+attributes!(f32, f64, i16, i32, i64, i8, isize, u16, u8, u32, u64, usize);
 
 pub trait ReadGroup {
     fn read_group(group: &Group, array_name: &str, transpose: bool) -> Result<Self, Error>
@@ -239,6 +242,25 @@ pub trait WriteGroup {
 }
 
 impl<S, D> WriteGroup for ndarray::ArrayBase<ndarray::OwnedRepr<S>, D>
+where
+    S: hdf5::H5Type + Zero + Clone,
+    D: ndarray::Dimension,
+{
+    fn write_group(
+        &self,
+        group: &Group,
+        array_name: &str,
+        transpose: bool,
+        mutate_on_write: bool,
+    ) -> Result<(), Error>
+    where
+        Self: Sized,
+    {
+        self.view().write_group(group, array_name, transpose, mutate_on_write)
+    }
+}
+
+impl <'a, S, D> WriteGroup for ndarray::ArrayBase<ndarray::ViewRepr<&'a S>, D>
 where
     S: hdf5::H5Type + Zero + Clone,
     D: ndarray::Dimension,

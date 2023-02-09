@@ -4,7 +4,9 @@ use macros::HDF5;
 use std::fs;
 
 type Arr3 = ndarray::Array3<f64>;
+
 use ndarray::Array2;
+use ndarray::ArrayView2;
 
 #[derive(HDF5)]
 struct TestWrite {
@@ -213,7 +215,9 @@ struct MutateOnWriteDifferentShapes {
 }
 
 #[derive(HDF5)]
+//struct DifferentShapes<'a> {
 struct DifferentShapes {
+    //one: ArrayView2<'a, usize>,
     one: Array2<usize>,
 }
 
@@ -225,6 +229,7 @@ fn mutate_on_write_different_shapes() {
     let arr = Array2::zeros((5, 4));
     let arr_another = Array2::zeros((3, 2));
 
+    //let h5_writer = DifferentShapes { one: arr.view() };
     let h5_writer = DifferentShapes { one: arr.clone() };
     h5_writer.write_hdf5(&file).unwrap();
 

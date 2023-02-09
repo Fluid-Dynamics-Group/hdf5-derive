@@ -89,9 +89,9 @@ fn should_error() {
     let res = ShouldError::read_hdf5(&file);
     if let Err(e) = res {
         println!("{}", e);
+        std::fs::remove_file(&path).unwrap();
+    } else {
+        std::fs::remove_file(&path).unwrap();
+        panic!()
     }
-
-    std::fs::remove_file(&path).unwrap();
-
-    //panic!()
 }
