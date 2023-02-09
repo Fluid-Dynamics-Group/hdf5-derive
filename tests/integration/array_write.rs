@@ -1,5 +1,5 @@
 use hdf5_derive::File;
-use hdf5_derive::{ContainerWrite, ContainerRead};
+use hdf5_derive::{ContainerRead, ContainerWrite};
 use std::fs;
 
 type Arr3 = ndarray::Array3<f64>;

@@ -194,7 +194,7 @@ macro_rules! attributes{
 
 attributes!(f32, f64, i16, i32, i64, i8, isize, u16, u8, u32, u64, usize);
 
-/// Defines how a given piece of data should be parsed. 
+/// Defines how a given piece of data should be parsed.
 /// You likely do not want to use this trait; instead use the methods from [`ContainerRead`]
 pub trait ReadGroup {
     fn read_group(group: &Group, array_name: &str, transpose: bool) -> Result<Self, Error>
@@ -229,7 +229,7 @@ where
     }
 }
 
-/// Defines how a given piece of data should be written. 
+/// Defines how a given piece of data should be written.
 /// You likely do not want to use this trait; instead use the methods from [`ContainerWrite`]
 pub trait WriteGroup {
     fn write_group(
@@ -258,11 +258,12 @@ where
     where
         Self: Sized,
     {
-        self.view().write_group(group, array_name, transpose, mutate_on_write)
+        self.view()
+            .write_group(group, array_name, transpose, mutate_on_write)
     }
 }
 
-impl <'a, S, D> WriteGroup for ndarray::ArrayBase<ndarray::ViewRepr<&'a S>, D>
+impl<'a, S, D> WriteGroup for ndarray::ArrayBase<ndarray::ViewRepr<&'a S>, D>
 where
     S: hdf5::H5Type + Zero + Clone,
     D: ndarray::Dimension,
