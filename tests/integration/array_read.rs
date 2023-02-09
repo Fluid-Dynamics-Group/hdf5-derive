@@ -1,11 +1,11 @@
-use hdf5_derive::ContainerIo;
 use hdf5_derive::File;
-use macros::HDF5;
+//use hdf5_derive::{ContainerWrite as _, ContainerRead as _};
+use hdf5_derive::{ContainerWrite, ContainerRead};
 use std::fs;
 
 type Arr3 = ndarray::Array3<f64>;
 
-#[derive(HDF5)]
+#[derive(ContainerRead, ContainerWrite)]
 struct TestStruct {
     one: Arr3,
 }
@@ -38,7 +38,7 @@ fn simple_read_write() {
     fs::remove_file(path).ok();
 }
 
-#[derive(HDF5)]
+#[derive(ContainerRead, ContainerWrite)]
 struct RenameArray {
     #[hdf5(rename(read = "two", write = "one"))]
     one: Arr3,
@@ -76,7 +76,7 @@ fn simple_rename() {
     fs::remove_file(path).ok();
 }
 
-#[derive(HDF5)]
+#[derive(ContainerRead, ContainerWrite)]
 struct ShouldError {
     one: Arr3,
 }

@@ -1,7 +1,6 @@
-use hdf5_derive::ContainerIo;
-use hdf5_derive::HDF5;
+use hdf5_derive::{ContainerRead, ContainerWrite};
 
-#[derive(HDF5)]
+#[derive(ContainerRead, ContainerWrite)]
 struct SimpleAttributeRead {
     some_value: u64,
 }
@@ -24,7 +23,7 @@ fn simple_attribute_read() {
     std::fs::remove_file(&path).unwrap();
 }
 
-#[derive(HDF5)]
+#[derive(ContainerRead, ContainerWrite)]
 struct SimpleAttributeWrite {
     another_value: u64,
 }
@@ -48,7 +47,7 @@ fn simple_attribute_write() {
     std::fs::remove_file(&path).unwrap();
 }
 
-#[derive(HDF5)]
+#[derive(ContainerRead, ContainerWrite)]
 #[hdf5(mutate_on_write)]
 struct MutatedAttributeWrite {
     #[hdf5(rename(both = "renamed_value"))]

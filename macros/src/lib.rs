@@ -6,12 +6,23 @@ use syn::{parse_macro_input, DeriveInput, Result};
 use syn::spanned::Spanned;
 use darling::{ast, FromDeriveInput, FromField};
 
-#[proc_macro_derive(HDF5, attributes(hdf5))]
-pub fn hdf5(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(ContainerRead, attributes(hdf5))]
+pub fn container_read(input: TokenStream) -> TokenStream {
     // Parse the input tokens into a syntax tree
     let input = parse_macro_input!(input as DeriveInput);
 
-    derive(input)
+    read::derive_container_read(input)
+        .map(Into::into)
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
+}
+
+#[proc_macro_derive(ContainerWrite, attributes(hdf5))]
+pub fn container_write(input: TokenStream) -> TokenStream {
+    // Parse the input tokens into a syntax tree
+    let input = parse_macro_input!(input as DeriveInput);
+
+    write::derive_container_write(input)
         .map(Into::into)
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
@@ -84,7 +95,7 @@ struct InputReceiver {
     mutate_on_write: bool,
 }
 
-#[derive(Debug, FromField)]
+#[derive(Debug, FromField, Clone)]
 #[darling(attributes(hdf5))]
 struct FieldReceiver {
     /// Get the ident of the field. For fields in tuple or newtype structs or
@@ -108,13 +119,13 @@ struct FieldReceiver {
     mutate_on_write: Option<bool>,
 }
 
-fn derive(input: DeriveInput) -> Result<TokenStream> {
+fn fields_from_input(input: &DeriveInput) -> Result<(InputReceiver, Vec<FieldReceiver>)> {
     let receiver = InputReceiver::from_derive_input(&input).unwrap();
 
     // make sure we are dealing with a non-tuple / unit struct  struct
-    let fields_information = match receiver.data {
+    let fields = match receiver.data {
         ast::Data::Enum(_) => unreachable!(),
-        ast::Data::Struct(fields_with_style) => {
+        ast::Data::Struct(ref fields_with_style) => {
             match fields_with_style.style {
                 ast::Style::Tuple | ast::Style::Unit => {
                     Err(
@@ -123,62 +134,12 @@ fn derive(input: DeriveInput) -> Result<TokenStream> {
                 }
                 ast::Style::Struct => {
                     Ok(
-                        fields_with_style.fields
+                        fields_with_style.fields.clone()
                     )
                 }
             }
         }
     }?;
 
-    // build the reading body:
-    let read_data: Vec<read::ReadInfo> = fields_information
-        .iter()
-        .map(|rx: &FieldReceiver| {
-            let field_name = rx.ident.clone().unwrap();
-            let field_type = rx.ty.clone();
-            let transpose = rx.transpose.unwrap_or(receiver.transpose).transpose_read();
-
-            let array_name = rx.rename.read_name_or_ident(&field_name);
-
-            read::ReadInfo {field_name, field_type, transpose, array_name }
-
-        }).collect();
-
-    // build the writing body:
-    let write_data: Vec<write::WriteInfo> = fields_information
-        .iter()
-        .map(|rx: &FieldReceiver| {
-            let field_name = rx.ident.clone().unwrap();
-            let transpose = rx.transpose.unwrap_or(receiver.transpose).transpose_write();
-            let array_name = rx.rename.write_name_or_ident(&field_name);
-
-            let mutate_on_write = rx.mutate_on_write.unwrap_or(receiver.mutate_on_write);
-
-            write::WriteInfo {field_name, transpose, array_name, mutate_on_write}
-
-        }).collect();
-
-
-    let read_impl = read::read_codegen(receiver.ident.clone(), input.span(), &read_data)?;
-    let write_impl = write::write_codegen(input.span(), &write_data)?;
-
-    Ok(combine_impls(receiver.ident, receiver.generics, read_impl, write_impl).into())
-}
-
-
-fn combine_impls(ident: syn::Ident, generics: syn::Generics, read_body: proc_macro2::TokenStream, write_body: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
-    let (imp, ty, wher) = generics.split_for_impl();
-
-    quote::quote!(
-        impl #imp hdf5_derive::ContainerIo for #ident #ty #wher {
-            fn write_hdf5(&self, file: &hdf5_derive::File) -> Result<(), hdf5_derive::Error> {
-                #write_body
-            }
-            fn read_hdf5(group: &hdf5_derive::Group) -> Result<Self, hdf5_derive::Error> 
-                where Self: Sized
-            {
-                #read_body
-            }
-        }
-    )
+    Ok((receiver, fields))
 }

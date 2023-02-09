@@ -3,7 +3,7 @@
 /// Derive read and write capabilities for a struct of arrays
 ///
 /// refer to the [crate-level](index.html) documentation
-pub use macros::HDF5;
+pub use macros::{ContainerRead, ContainerWrite};
 
 pub use hdf5::File;
 pub use hdf5::Group;
@@ -21,11 +21,10 @@ pub trait ContainerWrite {
     ///
     ///
     /// ```
-    /// use hdf5_derive::ContainerIo;
-    /// use hdf5_derive::HDF5;
+    /// use hdf5_derive::ContainerWrite;
     /// use ndarray::Array2;
     ///
-    /// #[derive(HDF5)]
+    /// #[derive(ContainerWrite)]
     /// struct Data {
     ///     some_field: Array2<u32>
     /// }
@@ -55,11 +54,10 @@ pub trait ContainerRead {
     /// read the contents of an HDF5 file to `Self`
     ///
     /// ```
-    /// use hdf5_derive::ContainerIo;
-    /// use hdf5_derive::HDF5;
+    /// use hdf5_derive::ContainerRead;
     /// use ndarray::Array2;
     ///
-    /// #[derive(HDF5)]
+    /// #[derive(ContainerRead)]
     /// struct Data {
     ///     #[hdf5(rename(read = "some_field_renamed"))]
     ///     some_field: Array2<u32>
