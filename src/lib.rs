@@ -45,7 +45,7 @@ pub trait ContainerWrite {
     /// // remove this file for practical purposes
     /// std::fs::remove_file(path).unwrap();
     /// ```
-    fn write_hdf5(&self, container: &File) -> Result<(), Error>;
+    fn write_hdf5(&self, container: &Group) -> Result<(), Error>;
 }
 
 /// Provides methods for reading a struct's contents to a file. Derived with [`ContainerRead`]
@@ -124,6 +124,12 @@ pub enum Error {
     #[error(transparent)]
     /// Could not create a attribute in a hdf5 file when writing
     WriteAttribute(#[from] error::WriteAttribute),
+    #[error(transparent)]
+    /// Could not open an existing group in a hdf5 file when writing
+    MissingGroup(#[from] error::MissingGroup),
+    #[error(transparent)]
+    /// Could not create a group in a hdf5 file when writing
+    CreateGroup(#[from] error::CreateGroup),
 }
 
 /// Helper trait to determine the type of element that a given [`ArrayBase`](ndarray::ArrayBase)
@@ -229,6 +235,22 @@ where
     }
 }
 
+impl<T> ReadGroup for T
+where
+    T: ContainerRead,
+{
+    fn read_group(group: &Group, container_name: &str, _transpose: bool) -> Result<Self, Error>
+    where
+        Self: Sized,
+    {
+        let subgroup: Group = group
+            .group(container_name)
+            .map_err(|e| error::MissingGroup::from_field_name(container_name, e))?;
+
+        T::read_hdf5(&subgroup)
+    }
+}
+
 /// Defines how a given piece of data should be written.
 /// You likely do not want to use this trait; instead use the methods from [`ContainerWrite`]
 pub trait WriteGroup {
@@ -303,6 +325,36 @@ where
         fetch_dataset
             .write(self.view())
             .map_err(|e| error::WriteArray::from_field_name(array_name, e))?;
+
+        Ok(())
+    }
+}
+
+impl<T> WriteGroup for T
+where
+    T: ContainerWrite,
+{
+    fn write_group(
+        &self,
+        group: &Group,
+        container_name: &str,
+        _transpose: bool,
+        mutate_on_write: bool,
+    ) -> Result<(), Error>
+    where
+        Self: Sized,
+    {
+        let subgroup = if mutate_on_write {
+            group
+                .group(container_name)
+                .map_err(|e| error::MissingGroup::from_field_name(container_name, e))?
+        } else {
+            group
+                .create_group(container_name)
+                .map_err(|e| error::CreateGroup::from_field_name(container_name, e))?
+        };
+
+        self.write_hdf5(&subgroup)?;
 
         Ok(())
     }

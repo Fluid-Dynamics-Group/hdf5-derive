@@ -41,6 +41,18 @@ create_error_type! {
 }
 
 create_error_type! {
+    CreateGroup,
+    "Failed to create a group for `{}`",
+    "Could not create a group in a hdf5 file when writing"
+}
+
+create_error_type! {
+    MissingGroup,
+    "Failed to read a group `{}`",
+    "Could not open an existing group in a hdf5 file when writing"
+}
+
+create_error_type! {
     CreateAttribute,
     "Failed to create a attribute for `{}`",
     "Could not create a dataset in a hdf5 file when writing"

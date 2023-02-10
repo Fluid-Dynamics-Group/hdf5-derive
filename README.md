@@ -101,6 +101,10 @@ struct FortranData {
 }
 ```
 
+Note that a `#[transpose]` field attribute on a type implementing [`ContainerWrite`] or [`ContainerRead`]
+(including derived types) will be ignored. Instead, the `#[transpose]` attributes on the struct or struct's fields will be
+used instead.
+
 ## Renaming Arrays
 
 By default, `hdf5_derive` looks for a dataset in the provided file with an identical name as the struct member.
