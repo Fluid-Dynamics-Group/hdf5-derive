@@ -63,7 +63,7 @@ pub(crate) fn derive_container_write(input: DeriveInput) -> Result<TokenStream> 
 
     let output = quote::quote!(
         impl #imp hdf5_derive::ContainerWrite for #ident #ty #wher {
-            fn write_hdf5(&self, file: &hdf5_derive::File) -> Result<(), hdf5_derive::Error> {
+            fn write_hdf5(&self, file: &hdf5_derive::Group) -> Result<(), hdf5_derive::Error> {
                 #write_impl
             }
         }

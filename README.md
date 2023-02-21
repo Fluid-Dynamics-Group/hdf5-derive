@@ -24,6 +24,12 @@ struct Data {
 	temperature: Array3<f64>,
 	reynolds_number: f64,
 	timesteps: u64,
+	supplemental_information: NestedData
+}
+
+#[derive(ContainerRead, ContainerWrite)]
+struct NestedData {
+	vorticity: Array4<f32>
 }
 
 // fill the struct with some data
@@ -32,7 +38,10 @@ let data = Data {
 	temperature: Array3::zeros((N, N, N)),
 	velocity: Array4::zeros((N, N, N, 3)),
 	timesteps: 10_000,
-	reynolds_number: 1650.
+	reynolds_number: 1650.,
+	supplemental_information: NestedData {
+		vorticity: Array4::zeros((N,N,N,3))
+	}
 };
 
 // write data to a file
@@ -101,6 +110,10 @@ struct FortranData {
 }
 ```
 
+Note that a `#[transpose]` field attribute on a type implementing [`ContainerWrite`] or [`ContainerRead`]
+(including derived types) will be ignored. Instead, the `#[transpose]` attributes on the struct or struct's fields will be
+used instead.
+
 ## Renaming Arrays
 
 By default, `hdf5_derive` looks for a dataset in the provided file with an identical name as the struct member.
@@ -145,7 +158,6 @@ level attributes (similar to `#[transpose]`). To mutate all fields in a struct:
 
 ```rust
 use hdf5_derive::{ContainerRead, ContainerWrite};
-use ndarray::Array2;
 
 #[derive(ContainerRead, ContainerWrite)]
 #[hdf5(mutate_on_write)]
@@ -199,6 +211,57 @@ struct SolverResultWithAttribute {
 	high_dimensional_data: Array5<f64>,
 	#[hdf5(mutate_on_write)]
 	current_timestep: u32,
+}
+```
+
+## HDF5 Groups
+
+you can nest `struct` definitions with derived `ContainerRead` / `ContainerWrite` in order to 
+parse nested groups. For example if you had the following layout:
+
+```text
+.
+├── attribute_1
+├── attribute_2
+├── group_1
+│   ├── dataset_1
+│   ├── dataset_2
+│   └── dataset_3
+└── group_2
+    ├── attribute_1
+    ├── dataset_1
+    └── dataset_2
+```
+
+you could parse them with
+
+```rust
+use hdf5_derive::{ContainerRead, ContainerWrite};
+use ndarray::{Array3, Array2};
+
+#[derive(ContainerRead, ContainerWrite)]
+struct Root {
+	attribute_1: usize,
+	attribute_2: u16,
+	#[hdf5(transpose="both")] // <---- this attribute does nothing
+	group_1: FirstGroup,
+	#[hdf5(mutate_on_write)] // <---- this attribute does nothing
+	group_2: SecondGroup,
+}
+
+#[derive(ContainerRead, ContainerWrite)]
+#[hdf5(mutate_on_write)] // <-- this attribute works
+struct FirstGroup {
+	dataset_1: Array3<u8>,
+	dataset_2: Array2<f32>,
+	dataset_3: Array2<usize>,
+}
+
+#[derive(ContainerRead, ContainerWrite)]
+#[hdf5(transpose= "read")] // <-- this attribute works
+struct SecondGroup {
+	dataset_1: Array3<f64>,
+	dataset_2: Array2<i32>,
 }
 ```
 

@@ -238,3 +238,39 @@ fn mutate_on_write_different_shapes() {
 
     fs::remove_file(path).ok();
 }
+
+#[derive(ContainerWrite, ContainerRead, PartialEq, Eq, Debug)]
+struct TopLevelContainer {
+    one: Array2<usize>,
+    nested_container: NestedContainer,
+}
+
+#[derive(ContainerWrite, ContainerRead, Eq, PartialEq, Debug)]
+struct NestedContainer {
+    two: Array2<usize>,
+}
+
+#[test]
+fn nested_containers() {
+    let path = "nested_containers.h5";
+    let file = hdf5::File::create(&path).unwrap();
+
+    let arr = Array2::zeros((5, 4));
+    let arr_another = Array2::zeros((3, 2));
+
+    let nested_container = NestedContainer {
+        two: arr_another.clone(),
+    };
+    let top_container = TopLevelContainer {
+        one: arr.clone(),
+        nested_container,
+    };
+    top_container.write_hdf5(&file).unwrap();
+
+    // then read the data into a struct that mutates it when it writes
+    let read_container = TopLevelContainer::read_hdf5(&file).unwrap();
+
+    assert_eq!(read_container, top_container);
+
+    fs::remove_file(path).ok();
+}
