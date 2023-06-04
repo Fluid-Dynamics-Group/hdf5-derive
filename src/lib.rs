@@ -1,4 +1,5 @@
 #![doc = include_str!("../README.md")]
+#![warn(missing_docs)]
 
 pub use macros::{ContainerRead, ContainerWrite};
 
@@ -6,6 +7,9 @@ pub use hdf5::File;
 pub use hdf5::Group;
 
 pub mod error;
+mod lazy_array;
+
+pub use lazy_array::*;
 
 #[doc(hidden)]
 pub use error::*;
@@ -130,6 +134,21 @@ pub enum Error {
     #[error(transparent)]
     /// Could not create a group in a hdf5 file when writing
     CreateGroup(#[from] error::CreateGroup),
+    /// Failed to fetch the datatype of a given dataset
+    #[error(transparent)]
+    MissingDatatype(#[from] error::MissingDatatype),
+    /// [`crate::lazy_array::LazyArray`] underlying [`hdf5::Dataset`] was not the correct dimension
+    #[error(transparent)]
+    DimensionMismatch(#[from] error::DimensionMismatch),
+    /// Datatype for [`crate::LazyArray`] was incorrect
+    #[error(transparent)]
+    WrongDatatype(#[from] error::WrongDatatype),
+    /// Failed to read a slice of data from an HDF5 dataset
+    #[error(transparent)]
+    ReadSlice(#[from] error::ReadSlice),
+    /// Failed to write a slice of data to an HDF5 dataset
+    #[error(transparent)]
+    WriteSlice(#[from] error::WriteSlice),
 }
 
 /// Helper trait to determine the type of element that a given [`ArrayBase`](ndarray::ArrayBase)
@@ -203,6 +222,8 @@ attributes!(f32, f64, i16, i32, i64, i8, isize, u16, u8, u32, u64, usize);
 /// Defines how a given piece of data should be parsed.
 /// You likely do not want to use this trait; instead use the methods from [`ContainerRead`]
 pub trait ReadGroup {
+    /// Given an hdf5 [`hdf5::Group`] and the name of the array we wish to read from it
+    /// `array_name`, read the data from the array.
     fn read_group(group: &Group, array_name: &str, transpose: bool) -> Result<Self, Error>
     where
         Self: Sized;
@@ -254,6 +275,8 @@ where
 /// Defines how a given piece of data should be written.
 /// You likely do not want to use this trait; instead use the methods from [`ContainerWrite`]
 pub trait WriteGroup {
+    /// Given an hdf5 [`hdf5::Group`] and the name of the array we wish to read from it
+    /// `array_name`, write the data to the correct dataset in the group
     fn write_group(
         &self,
         group: &Group,
