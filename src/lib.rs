@@ -52,7 +52,7 @@ pub trait ContainerWrite {
     fn write_hdf5(&self, container: &Group) -> Result<(), Error>;
 }
 
-/// Provides methods for reading a struct's contents to a file. Derived with [`ContainerRead`]
+/// Provides methods for reading a struct's contents from a file. Derived with [`ContainerRead`]
 /// proc macro.
 pub trait ContainerRead {
     /// read the contents of an HDF5 file to `Self`
