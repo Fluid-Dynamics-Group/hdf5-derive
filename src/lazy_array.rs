@@ -91,6 +91,8 @@ where
     ///     .unwrap();
     ///
     /// let lazy_array = hdf5_derive::LazyArray4::<f64>::new(dataset).unwrap();
+    ///
+    /// std::fs::remove_file(path);
     /// ```
     pub fn new(dataset: Dataset) -> Result<Self, crate::Error> {
         // first, try to do a full size read to ensure the dimension is correct

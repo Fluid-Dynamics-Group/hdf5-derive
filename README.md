@@ -2,7 +2,7 @@
 
 read and write arrays from an hdf5 file to a struct
 
-[Documentation](https://fluid-dynamics-group.github.io/hdf5-derive-docs/hdf5_derive/index.html)
+[Documentation](https://fluid-dynamics-group.github.io/hdf5-derive/hdf5_derive/index.html)
 
 ## Usage
 
