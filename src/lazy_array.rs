@@ -160,6 +160,8 @@ where
     /// let slice = lazy_reader.arr.slice(ndarray::s![1,2,1,1,2]).unwrap();
     ///
     /// assert_eq!(slice.into_scalar(), 10.0);
+    ///
+    /// std::fs::remove_file(path);
     /// ```
     pub fn slice<I>(&self, info: I) -> Result<Array<T, I::OutDim>, crate::Error>
     where
@@ -215,6 +217,8 @@ where
     /// // go back and read the data, it should be different now
     /// let slice = lazy_reader.arr.slice(ndarray::s![1,2,1,1,2]).unwrap();
     /// assert_eq!(slice.into_scalar(), 3.0);
+    ///
+    /// std::fs::remove_file(path);
     /// ```
     pub fn write_slice<'a, ARR, I>(&self, array: ARR, info: I) -> Result<(), crate::Error>
     where
@@ -227,6 +231,23 @@ where
             .map_err(|e| crate::Error::from(error::WriteSlice::from_field_name(&self.name, e)))?;
 
         Ok(())
+    }
+
+    /// provides access to the underlying dataset
+    pub fn dataset(&self) -> &hdf5::Dataset {
+        &self.dataset
+    }
+}
+
+impl<T, DIM> std::ops::Deref for LazyArray<T, DIM>
+where
+    DIM: Dimension,
+    T: H5Type,
+{
+    type Target = hdf5::Dataset;
+
+    fn deref(&self) -> &Self::Target {
+        &self.dataset
     }
 }
 
@@ -277,7 +298,7 @@ where
     }
 }
 
-//#[cfg(test)]
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::{ContainerRead, ContainerWrite};
