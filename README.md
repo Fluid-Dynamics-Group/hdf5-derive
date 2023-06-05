@@ -2,7 +2,7 @@
 
 read and write arrays from an hdf5 file to a struct
 
-[Documentation](https://fluid-dynamics-group.github.io/hdf5-derive-docs/hdf5_derive/index.html)
+[Documentation](https://fluid-dynamics-group.github.io/hdf5-derive/hdf5_derive/index.html)
 
 ## Usage
 
@@ -56,6 +56,38 @@ std::fs::remove_file("some-file.h5").ok();
 
 When passing a [`hdf5::File`](hdf5::File) to `read_hdf5` and `write_hdf5`, ensure that the 
 file was opened with the correct permissions.
+
+## Large Datasets
+
+Sometimes, a dataset is too large to load into memory. By default, you have a container specified like this:
+
+```
+use hdf5_derive::{ContainerRead, ContainerWrite};
+use ndarray::Array5;
+
+#[derive(ContainerRead, ContainerWrite)]
+struct LargeDataset {
+	array_1: Array5<f64>,
+	array_2: Array5<f64>,
+	array_3: Array5<f64>,
+}
+```
+
+all of the data for `array_1`, `array_2` and `array_3` will be loaded into memory. Since these arrays are 5 dimensional,
+this may consume a large portion or memory. If you wish to avoid loading the array into memory, you can use
+a [`LazyArray`] as a nice dimension-checked + type-checked abstraction over [`hdf5::Dataset`]. Lazy array
+reads/writes are always to/from disk. The equivalent lazy code looks like this:
+
+```
+use hdf5_derive::{ContainerRead, ContainerWrite, LazyArray5};
+
+#[derive(ContainerRead, ContainerWrite)]
+struct LargeDataset {
+	array_1: LazyArray5<f64>,
+	array_2: LazyArray5<f64>,
+	array_3: LazyArray5<f64>,
+}
+```
 
 ## Transposing
 

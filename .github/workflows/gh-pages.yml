@@ -22,10 +22,10 @@ jobs:
           sudo apt-get install libhdf5-dev -y
       - name: Build documentation
         run: cargo doc --no-deps
-      - name: Deploy to GH-Pages
+      - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
+        if: ${{ github.ref == 'refs/heads/master' }}
         with:
-          external_repository: Fluid-Dynamics-Group/hdf5-derive-docs
-          personal_token: ${{ secrets.PERSONAL_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./target/doc
           publish_branch: gh-pages
