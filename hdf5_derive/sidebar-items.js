@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"derive":["ContainerRead","ContainerWrite"],"enum":["Error"],"mod":["error"],"struct":["File","Group","LazyArray"],"trait":["ContainerRead","ContainerWrite","ReadGroup","WriteGroup"],"type":["LazyArray1","LazyArray2","LazyArray3","LazyArray4","LazyArray5","LazyArray6"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["CreateAttribute","CreateDataset","CreateGroup","DimensionMismatch","FetchAttribute","FetchDataset","MissingAttribute","MissingDataset","MissingDatatype","MissingGroup","ReadSlice","SerializeArray","SerializeAttribute","WriteArray","WriteAttribute","WriteSlice","WrongDatatype"]};

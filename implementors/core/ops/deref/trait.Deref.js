@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"hdf5_derive":[["impl&lt;T, DIM&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.70.0/core/ops/deref/trait.Deref.html\" title=\"trait core::ops::deref::Deref\">Deref</a> for <a class=\"struct\" href=\"hdf5_derive/struct.LazyArray.html\" title=\"struct hdf5_derive::LazyArray\">LazyArray</a>&lt;T, DIM&gt;<span class=\"where fmt-newline\">where\n    DIM: <a class=\"trait\" href=\"https://docs.rs/ndarray/0.15/ndarray/dimension/dimension_trait/trait.Dimension.html\" title=\"trait ndarray::dimension::dimension_trait::Dimension\">Dimension</a>,\n    T: H5Type,</span>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
