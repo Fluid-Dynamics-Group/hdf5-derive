@@ -74,7 +74,9 @@ where
     DIM: Dimension,
     T: H5Type,
 {
-    /// generate a dimension-checked and type-checked `LazyArray` for a given dataset
+    /// generate a dimension-checked and type-checked `LazyArray` for a given dataset. 
+    /// Errors if the dimension of the dataset is different from the type, or if the type of the
+    /// HDF5 data is different from the type.
     ///
     /// ## Exmaple
     ///
