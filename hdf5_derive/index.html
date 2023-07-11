@@ -145,7 +145,7 @@ You can use the <code>rename</code> attribute to change what should be read (or 
 	<span class="attr">#[hdf5(rename(both = <span class="string">&quot;my_array&quot;</span>))]
 	</span>array: ndarray::Array3&lt;usize&gt;
 }</code></pre></div>
-<p>You can specify either <code>read</code>, <code>write</code>, <code>read</code> and <code>write</code>, or <code>both</code> if they <code>read == write</code>. If you 
+<p>You can specify either <code>read</code>, <code>write</code>, <code>read</code> and <code>write</code>, or <code>both</code> if <code>read == write</code>. If you 
 specify <code>both</code> and <code>read</code> (or <code>write</code>), the value defaults to the expression provided in <code>both</code>.</p>
 <h3 id="mutating-existing-files"><a href="#mutating-existing-files">Mutating Existing Files</a></h3>
 <p>If you only wish to change some values from an existing file, then you can use the <code>#[mutate_on_write]</code> attribute
@@ -244,10 +244,6 @@ parse nested groups. For example if you had the following layout:</p>
 	dataset_1: Array3&lt;f64&gt;,
 	dataset_2: Array2&lt;i32&gt;,
 }</code></pre></div>
-<h3 id="reading-and-writing-large-data-files"><a href="#reading-and-writing-large-data-files">Reading and writing large data files</a></h3>
-<p><code>hdf5-derive</code> makes no attempt to partially load data from an array. Instead, the entire dataset specified is loaded
-into memory. If you wish to only access a slice from a large file, it may be more efficient to directly use the <code>hdf5</code>
-library.</p>
 </div></details><h2 id="modules" class="small-section-header"><a href="#modules">Modules</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="error/index.html" title="mod hdf5_derive::error">error</a></div><div class="desc docblock-short">Error types for handling HDF5 data with additional context information</div></li></ul><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.File.html" title="struct hdf5_derive::File">File</a></div><div class="desc docblock-short">HDF5 file object.</div></li><li><div class="item-name"><a class="struct" href="struct.Group.html" title="struct hdf5_derive::Group">Group</a></div><div class="desc docblock-short">Represents the HDF5 group object.</div></li><li><div class="item-name"><a class="struct" href="struct.LazyArray.html" title="struct hdf5_derive::LazyArray">LazyArray</a></div><div class="desc docblock-short">An object that can be treated similar to an <a href="https://docs.rs/ndarray/0.15/ndarray/type.Array.html" title="type ndarray::Array"><code>ndarray::Array</code></a>,
 but backed by an on-disk HDF5 dataset instead of an in-memory array.</div></li></ul><h2 id="enums" class="small-section-header"><a href="#enums">Enums</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.Error.html" title="enum hdf5_derive::Error">Error</a></div><div class="desc docblock-short">General error type that provides helpful information on what went wrong</div></li></ul><h2 id="traits" class="small-section-header"><a href="#traits">Traits</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.ContainerRead.html" title="trait hdf5_derive::ContainerRead">ContainerRead</a></div><div class="desc docblock-short">Provides methods for reading a struct’s contents from a file. Derived with <a href="trait.ContainerRead.html" title="trait hdf5_derive::ContainerRead"><code>ContainerRead</code></a>
 proc macro.</div></li><li><div class="item-name"><a class="trait" href="trait.ContainerWrite.html" title="trait hdf5_derive::ContainerWrite">ContainerWrite</a></div><div class="desc docblock-short">Provides methods for writing a struct’s contents to a file. Derived with <a href="trait.ContainerWrite.html" title="trait hdf5_derive::ContainerWrite"><code>ContainerWrite</code></a>
