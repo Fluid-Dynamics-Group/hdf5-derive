@@ -175,7 +175,7 @@ struct RenamedData {
 }
 ```
 
-You can specify either `read`, `write`, `read` and `write`, or `both` if they `read == write`. If you 
+You can specify either `read`, `write`, `read` and `write`, or `both` if `read == write`. If you 
 specify `both` and `read` (or `write`), the value defaults to the expression provided in `both`.
 
 ## Mutating Existing Files
@@ -296,9 +296,3 @@ struct SecondGroup {
 	dataset_2: Array2<i32>,
 }
 ```
-
-## Reading and writing large data files
-
-`hdf5-derive` makes no attempt to partially load data from an array. Instead, the entire dataset specified is loaded
-into memory. If you wish to only access a slice from a large file, it may be more efficient to directly use the `hdf5`
-library.
